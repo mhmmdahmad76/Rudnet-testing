@@ -1,26 +1,26 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { Award, Bell, BookOpen, CreditCard, Folder, Home, Search, Target } from "lucide-react";
+import { Bell } from "lucide-react";
 
 import { Logo } from "@/components/lisaan/logo";
-import { AppNav } from "@/components/lisaan/app-nav";
+import { AppNav, type AppNavItem } from "@/components/lisaan/app-nav";
+import { AppSearch } from "@/components/lisaan/app-search";
 import { SiteHeader } from "@/components/lisaan/site-header";
 import { AccountMenu } from "@/components/lisaan/account-menu";
 import { LanguageSwitcher } from "@/components/lisaan/language-switcher";
 import { IconButton } from "@/components/lisaan/icon-button";
 import { Avatar } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/locale";
 import { EMAIL_COOKIE, NAME_COOKIE } from "@/lib/session";
 
-const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/courses", label: "My courses", icon: BookOpen },
-  { href: "/resources", label: "Resources", icon: Folder },
-  { href: "/quizzes", label: "Quizzes", icon: Target },
-  { href: "/certificates", label: "Certificates", icon: Award },
-  { href: "/billing", label: "Billing", icon: CreditCard },
+const NAV: AppNavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: "home" },
+  { href: "/courses", label: "My courses", icon: "courses" },
+  { href: "/resources", label: "Resources", icon: "resources" },
+  { href: "/quizzes", label: "Quizzes", icon: "quizzes" },
+  { href: "/certificates", label: "Certificates", icon: "certificates" },
+  { href: "/billing", label: "Billing", icon: "billing" },
 ];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
@@ -50,13 +50,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="hidden h-16 items-center gap-4 border-b border-stroke-default bg-bg-surface px-6 lg:flex">
-          <div className="relative max-w-sm flex-1">
-            <Search
-              className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-fg-tertiary"
-              aria-hidden
-            />
-            <Input placeholder="Search lessons, resources…" className="ps-9" />
-          </div>
+          <AppSearch />
           <div className="ms-auto flex items-center gap-2">
             <LanguageSwitcher locale={locale} />
             <IconButton aria-label="Notifications" variant="ghost">

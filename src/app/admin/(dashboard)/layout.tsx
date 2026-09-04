@@ -1,22 +1,22 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { BarChart3, Bell, BookOpen, CreditCard, Settings } from "lucide-react";
+import { Bell } from "lucide-react";
 
 import { Logo } from "@/components/lisaan/logo";
-import { AppNav } from "@/components/lisaan/app-nav";
+import { AppNav, type AppNavItem } from "@/components/lisaan/app-nav";
 import { SiteHeader } from "@/components/lisaan/site-header";
 import { AccountMenu } from "@/components/lisaan/account-menu";
 import { LanguageSwitcher } from "@/components/lisaan/language-switcher";
 import { IconButton } from "@/components/lisaan/icon-button";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/locale";
 
-const NAV = [
-  { href: "/admin", label: "Overview", icon: BarChart3 },
-  { href: "/admin/courses", label: "Courses", icon: BookOpen },
-  { href: "/admin/payments", label: "Payments", icon: CreditCard },
-  { href: "/admin/pricing", label: "Pricing & blog", icon: BarChart3 },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+const NAV: AppNavItem[] = [
+  { href: "/admin", label: "Overview", icon: "overview" },
+  { href: "/admin/courses", label: "Courses", icon: "courses" },
+  { href: "/admin/payments", label: "Payments", icon: "billing" },
+  { href: "/admin/pricing", label: "Pricing & blog", icon: "overview" },
+  { href: "/admin/settings", label: "Settings", icon: "settings" },
 ];
 
 /** Same structure as the student shell, different nav — everything behind
