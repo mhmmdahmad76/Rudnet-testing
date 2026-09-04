@@ -6,6 +6,9 @@ export interface FieldProps extends React.HTMLAttributes<HTMLDivElement> {
   label: string;
   help?: string;
   error?: string;
+  /** Forces the invalid (red border) style without its own message — for
+   * screens where several fields share one Alert instead of per-field text. */
+  invalid?: boolean;
   required?: boolean;
   htmlFor?: string;
   children: React.ReactNode;
@@ -16,7 +19,7 @@ export interface FieldProps extends React.HTMLAttributes<HTMLDivElement> {
  * it never stacks below it, and the field's height must not change when
  * validation fails.
  */
-function Field({ label, help, error, required, htmlFor, children, className, ...props }: FieldProps) {
+function Field({ label, help, error, invalid, required, htmlFor, children, className, ...props }: FieldProps) {
   const generatedId = React.useId();
   const controlId = htmlFor ?? generatedId;
   const messageId = `${controlId}-message`;
@@ -39,7 +42,7 @@ function Field({ label, help, error, required, htmlFor, children, className, ...
             {
               id: controlId,
               "aria-describedby": message ? messageId : undefined,
-              "aria-invalid": Boolean(error) || undefined,
+              "aria-invalid": Boolean(error) || invalid || undefined,
             },
           )
         : children}
