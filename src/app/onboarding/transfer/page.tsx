@@ -140,7 +140,7 @@ export default function OnboardingTransferPage() {
           router.push("/onboarding/transfer/pending");
         }}
       >
-        I've sent the transfer
+        I&rsquo;ve sent the transfer
       </Button>
     </div>
   );

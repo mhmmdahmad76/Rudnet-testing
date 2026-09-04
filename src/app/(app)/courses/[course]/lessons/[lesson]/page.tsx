@@ -59,7 +59,7 @@ export default function LessonPage() {
             <Link href="/onboarding/plan">Unlock</Link>
           </Button>
           <Button variant="secondary" asChild>
-            <Link href={`/courses/${params.course}`}>See what's included</Link>
+            <Link href={`/courses/${params.course}`}>See what&rsquo;s included</Link>
           </Button>
         </div>
       </div>
@@ -153,7 +153,7 @@ export default function LessonPage() {
             </TabsList>
             <TabsContent value="overview" className="t-body-sm flex flex-col gap-3 pt-4 text-fg-secondary">
               <p>
-                In this lesson you'll practice the phrases that come up most often when ordering
+                In this lesson you&rsquo;ll practice the phrases that come up most often when ordering
                 food and drinks, plus the polite requests that go with them.
               </p>
               <p className="t-label-sm text-fg-primary">Transcript</p>

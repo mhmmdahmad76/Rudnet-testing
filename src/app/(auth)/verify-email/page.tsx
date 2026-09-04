@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { CodeInput } from "@/components/lisaan/code-input";
 import { Button } from "@/components/ui/button";
 import { EMAIL_COOKIE, ONBOARDING_STEP_COOKIE, VERIFIED_COOKIE, setDemoCookie } from "@/lib/session";
+import { useCookie } from "@/lib/use-cookie";
 
 const CORRECT_CODE = "123456";
 const RESEND_SECONDS = 60;
@@ -17,16 +18,7 @@ export default function VerifyEmailPage() {
   const [error, setError] = React.useState(false);
   const [attemptsLeft, setAttemptsLeft] = React.useState(5);
   const [resendIn, setResendIn] = React.useState(RESEND_SECONDS);
-  const [email, setEmail] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    setEmail(
-      document.cookie
-        .split("; ")
-        .find((row) => row.startsWith(`${EMAIL_COOKIE}=`))
-        ?.split("=")[1] ?? null,
-    );
-  }, []);
+  const email = useCookie(EMAIL_COOKIE);
 
   React.useEffect(() => {
     if (resendIn <= 0) return;
@@ -66,7 +58,7 @@ export default function VerifyEmailPage() {
 
       {error && (
         <p className="t-body-sm text-fg-danger">
-          That code didn't match. Codes expire after 30 seconds — {attemptsLeft} attempt
+          That code didn&rsquo;t match. Codes expire after 30 seconds — {attemptsLeft} attempt
           {attemptsLeft === 1 ? "" : "s"} left. (Demo code: 123456)
         </p>
       )}

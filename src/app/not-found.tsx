@@ -15,9 +15,9 @@ export default async function NotFound() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg-canvas p-8 text-center">
       <IconChip icon={Compass} tone="neutral" size="lg" />
       <div className="flex flex-col gap-2">
-        <p className="t-h2 text-fg-primary">This page doesn't exist</p>
+        <p className="t-h2 text-fg-primary">This page doesn&rsquo;t exist</p>
         <p className="t-body-sm max-w-sm text-fg-tertiary">
-          The link might be old, or the address was typed wrong. Here's where you probably meant
+          The link might be old, or the address was typed wrong. Here&rsquo;s where you probably meant
           to go.
         </p>
       </div>

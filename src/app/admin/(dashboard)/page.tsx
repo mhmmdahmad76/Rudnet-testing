@@ -434,14 +434,54 @@ export default function AdminOverviewPage() {
           />
         ) : (
           <>
-            <DataTable
-              columns={columnDefs}
-              data={sorted}
-              rowSelection={rowSelection}
-              onRowSelectionChange={setRowSelection}
-              getRowId={(row) => row.id}
-              onRowClick={(row) => router.push(`/admin/students/${row.id}`)}
-            />
+            {/* ≥769px: the full table. ≤768px: not a table — a stacked list of cards. */}
+            <div className="hidden sm:block">
+              <DataTable
+                columns={columnDefs}
+                data={sorted}
+                rowSelection={rowSelection}
+                onRowSelectionChange={setRowSelection}
+                getRowId={(row) => row.id}
+                onRowClick={(row) => router.push(`/admin/students/${row.id}`)}
+              />
+            </div>
+            <div className="flex flex-col divide-y divide-stroke-subtle sm:hidden">
+              {sorted.map((student) => (
+                <div
+                  key={student.id}
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => router.push(`/admin/students/${student.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") router.push(`/admin/students/${student.id}`);
+                  }}
+                  className="flex cursor-pointer flex-col gap-3 p-4 outline-none hover:bg-bg-hover focus-visible:bg-bg-hover"
+                >
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={Boolean(rowSelection[student.id])}
+                      onCheckedChange={(checked) => {
+                        setRowSelection((current) => ({ ...current, [student.id]: checked === true }));
+                      }}
+                      aria-label={`Select ${student.name}`}
+                      className="mt-1"
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                    <Avatar name={student.name} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="t-body-sm-strong truncate text-fg-primary">{student.name}</p>
+                      <p className="t-body-xs truncate text-fg-tertiary">{student.email}</p>
+                    </div>
+                    <Badge tone={STATUS_TONE[student.status]}>{STATUS_LABEL[student.status]}</Badge>
+                  </div>
+                  <div className="flex items-center gap-3 ps-11">
+                    <span className="t-body-xs text-fg-tertiary">Level {student.level}</span>
+                    <Progress value={student.progressPct} size="xs" className="flex-1" />
+                    <span className="t-numeric-sm text-fg-tertiary">{student.progressPct}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
             <div className="flex items-center justify-between border-t border-stroke-subtle px-4 py-3">
               <p className="t-body-xs text-fg-tertiary">
                 1–{sorted.length} of {sorted.length}

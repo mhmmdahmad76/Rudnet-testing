@@ -33,7 +33,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="t-h2 text-fg-primary">Good to see you, Amal</h1>
-        <p className="t-body-sm text-fg-tertiary">Here's where you left off.</p>
+        <p className="t-body-sm text-fg-tertiary">Here&rsquo;s where you left off.</p>
       </div>
 
       {state === "lapsed" && (

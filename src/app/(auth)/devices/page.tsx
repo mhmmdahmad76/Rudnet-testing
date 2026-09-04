@@ -37,7 +37,7 @@ export default function DevicesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="t-h2 text-fg-primary">You've reached your device limit</h1>
+        <h1 className="t-h2 text-fg-primary">You&rsquo;ve reached your device limit</h1>
         <p className="t-body-sm text-fg-secondary">
           Lisaan allows three signed-in devices at once. Sign one out to continue here.
         </p>

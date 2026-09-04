@@ -3,21 +3,22 @@
 import * as React from "react";
 import { Globe } from "lucide-react";
 
+function subscribe(callback: () => void) {
+  window.addEventListener("offline", callback);
+  window.addEventListener("online", callback);
+  return () => {
+    window.removeEventListener("offline", callback);
+    window.removeEventListener("online", callback);
+  };
+}
+
 /** Names what still works offline. */
 function OfflineBanner() {
-  const [offline, setOffline] = React.useState(false);
-
-  React.useEffect(() => {
-    setOffline(!navigator.onLine);
-    const goOffline = () => setOffline(true);
-    const goOnline = () => setOffline(false);
-    window.addEventListener("offline", goOffline);
-    window.addEventListener("online", goOnline);
-    return () => {
-      window.removeEventListener("offline", goOffline);
-      window.removeEventListener("online", goOnline);
-    };
-  }, []);
+  const offline = React.useSyncExternalStore(
+    subscribe,
+    () => !navigator.onLine,
+    () => false,
+  );
 
   if (!offline) return null;
 
@@ -28,8 +29,8 @@ function OfflineBanner() {
     >
       <Globe className="size-4 shrink-0" aria-hidden />
       <p className="t-body-xs">
-        You're offline — lessons you've already opened and quizzes in progress still work.
-        Everything else syncs once you're back.
+        You&rsquo;re offline — lessons you&rsquo;ve already opened and quizzes in progress still
+        work. Everything else syncs once you&rsquo;re back.
       </p>
     </div>
   );

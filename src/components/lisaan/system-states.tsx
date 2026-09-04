@@ -25,7 +25,7 @@ function MaintenanceState({ startsAt, endsAt }: { startsAt: Date; endsAt: Date }
       <div className="flex flex-col gap-2">
         <p className="t-h2 text-fg-primary">Down for scheduled maintenance</p>
         <p className="t-body-sm max-w-sm text-fg-tertiary">
-          We're making some improvements. Back between {fmt(startsAt)} and {fmt(endsAt)}.
+          We&rsquo;re making some improvements. Back between {fmt(startsAt)} and {fmt(endsAt)}.
         </p>
       </div>
     </div>
@@ -38,7 +38,7 @@ function PermissionDeniedState({ roleNeeded }: { roleNeeded: string }) {
     <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 p-8 text-center">
       <IconChip icon={Lock} tone="warning" size="lg" />
       <div className="flex flex-col gap-2">
-        <p className="t-h2 text-fg-primary">You don't have access to this page</p>
+        <p className="t-h2 text-fg-primary">You don&rsquo;t have access to this page</p>
         <p className="t-body-sm max-w-sm text-fg-tertiary">
           This page requires the {roleNeeded} role. Sign in with an account that has it, or ask an
           owner to grant access.
@@ -82,7 +82,7 @@ function SessionExpiredState({ next }: { next?: string }) {
       <div className="flex flex-col gap-2">
         <p className="t-h2 text-fg-primary">Your session expired</p>
         <p className="t-body-sm max-w-sm text-fg-tertiary">
-          Anything you were writing is still saved as a draft. Sign in again and you'll land right
+          Anything you were writing is still saved as a draft. Sign in again and you&rsquo;ll land right
           back here.
         </p>
       </div>

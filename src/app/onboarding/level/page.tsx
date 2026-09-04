@@ -31,7 +31,7 @@ export default function OnboardingLevelPage() {
   return (
     <div>
       <OnboardingStepBar step={1} />
-      <h1 className="t-h2 mb-2 text-fg-primary">What's your English level?</h1>
+      <h1 className="t-h2 mb-2 text-fg-primary">What&rsquo;s your English level?</h1>
       <p className="t-body-sm mb-6 text-fg-secondary">
         Pick the description closest to you — every answer here is editable later from account
         settings.

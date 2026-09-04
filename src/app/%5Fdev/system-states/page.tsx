@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 
 import {
@@ -19,6 +20,11 @@ function Section({ title, id, children }: { title: string; id: string; children:
 }
 
 export default function SystemStatesGallery() {
+  const [{ startsAt, endsAt }] = React.useState(() => ({
+    startsAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
+    endsAt: new Date(Date.now() + 4 * 60 * 60 * 1000),
+  }));
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-10">
       <div>
@@ -34,10 +40,7 @@ export default function SystemStatesGallery() {
       </div>
 
       <Section title="Maintenance (503)" id="maintenance">
-        <MaintenanceState
-          startsAt={new Date(Date.now() + 2 * 60 * 60 * 1000)}
-          endsAt={new Date(Date.now() + 4 * 60 * 60 * 1000)}
-        />
+        <MaintenanceState startsAt={startsAt} endsAt={endsAt} />
       </Section>
 
       <Section title="Permission denied (403)" id="permission-denied">

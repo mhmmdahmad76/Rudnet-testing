@@ -80,7 +80,7 @@ export default function QuizResultPage() {
           <IconChip icon={Clock} tone="warning" />
           <h1 className="t-h2 text-fg-primary">Not quite — {score}%, the pass mark is {quiz.passMark}%</h1>
           <p className="t-body-sm max-w-sm text-fg-secondary">
-            Review “Past simple tense” (4:12) before your next attempt — that's where most of the
+            Review “Past simple tense” (4:12) before your next attempt — that&rsquo;s where most of the
             missed points came from. You have 2 attempts left.
           </p>
           <div className="flex gap-3">

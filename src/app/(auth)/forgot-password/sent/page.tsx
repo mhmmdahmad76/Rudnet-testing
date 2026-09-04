@@ -12,7 +12,7 @@ export default function ForgotPasswordSentPage() {
         <h1 className="t-h2 text-fg-primary">Check your inbox</h1>
         {/* Must not confirm registration either way. */}
         <p className="t-body-sm max-w-sm text-fg-secondary">
-          If that address has an account, we've sent a link to reset the password. The link works
+          If that address has an account, we&rsquo;ve sent a link to reset the password. The link works
           once and lasts one hour.
         </p>
       </div>

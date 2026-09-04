@@ -47,7 +47,7 @@ export default function AdminInvitePage() {
       <div className="flex flex-col gap-2">
         <h1 className="t-h2 text-fg-primary">Set up your instructor account</h1>
         <p className="t-body-sm text-fg-secondary">
-          Two-factor authentication is required for every admin account — it isn't a setting you
+          Two-factor authentication is required for every admin account — it isn&rsquo;t a setting you
           can turn off.
         </p>
       </div>

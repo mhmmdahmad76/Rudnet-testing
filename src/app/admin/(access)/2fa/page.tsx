@@ -94,7 +94,7 @@ export default function AdminTwoFactorPage() {
 
       {error && (
         <p className="t-body-sm text-fg-danger">
-          That code didn't match — {attemptsLeft} attempt{attemptsLeft === 1 ? "" : "s"} left before
+          That code didn&rsquo;t match — {attemptsLeft} attempt{attemptsLeft === 1 ? "" : "s"} left before
           this account is locked for 15 minutes. (Demo code: 123456)
         </p>
       )}

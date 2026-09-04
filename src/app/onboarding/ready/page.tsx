@@ -1,12 +1,11 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { Award, Calendar, Target, TrendingUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { IconChip } from "@/components/lisaan/icon-chip";
-import { getOnboardingAnswers, type OnboardingAnswers } from "@/lib/onboarding-store";
+import { useOnboardingAnswers } from "@/lib/onboarding-store";
 
 const PACE_LABEL: Record<string, string> = { "2": "2 days a week", "4": "4 days a week", "6": "6 days a week" };
 const GOAL_LABEL: Record<string, string> = {
@@ -18,14 +17,15 @@ const GOAL_LABEL: Record<string, string> = {
 };
 
 export default function OnboardingReadyPage() {
-  const [answers, setAnswers] = React.useState<OnboardingAnswers>({});
-
-  React.useEffect(() => {
-    setAnswers(getOnboardingAnswers());
-  }, []);
+  const answers = useOnboardingAnswers();
 
   const summary = [
-    { icon: TrendingUp, label: "Level", value: answers.level === "unsure" ? "We'll confirm after your first quiz" : answers.level },
+    {
+      icon: TrendingUp,
+      label: "Level",
+      value:
+        answers.level === "unsure" ? "We’ll confirm after your first quiz" : answers.level,
+    },
     { icon: Target, label: "Goals", value: answers.goals?.map((g) => GOAL_LABEL[g] ?? g).join(", ") || "—" },
     { icon: Calendar, label: "Pace", value: answers.pace ? PACE_LABEL[answers.pace] : "—" },
     { icon: Award, label: "Plan", value: answers.plan === "annual" ? "Annual" : "Monthly" },
@@ -35,7 +35,7 @@ export default function OnboardingReadyPage() {
     <div className="flex flex-col items-center gap-8 text-center">
       <IconChip icon={Award} tone="achievement" size="lg" />
       <div className="flex flex-col gap-2">
-        <h1 className="t-h2 text-fg-primary">You're all set</h1>
+        <h1 className="t-h2 text-fg-primary">You&rsquo;re all set</h1>
         <p className="t-body-sm max-w-sm text-fg-secondary">
           Every choice below is editable later from account settings.
         </p>

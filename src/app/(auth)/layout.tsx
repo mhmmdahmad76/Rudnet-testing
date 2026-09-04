@@ -4,19 +4,8 @@ import Link from "next/link";
 
 import { Logo } from "@/components/lisaan/logo";
 import { LanguageSwitcher } from "@/components/lisaan/language-switcher";
+import { AuthQuote } from "@/components/lisaan/auth-quote";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/locale";
-
-const QUOTES = [
-  {
-    quote:
-      "I finally understood the difference between “since” and “for” — three months of confusion, gone in one lesson.",
-    name: "Yousef, B1",
-  },
-  {
-    quote: "The quizzes made me actually remember the grammar instead of just recognizing it.",
-    name: "Rania, C1",
-  },
-];
 
 /**
  * Every auth screen shares this two-pane layout: a violet-to-ink gradient
@@ -27,7 +16,6 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
   const locale = isLocale(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
-  const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
 
   return (
     <div className="flex min-h-screen">
@@ -35,10 +23,7 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
         <Link href="/" className="text-fg-on-brand">
           <Logo tone="mono" />
         </Link>
-        <blockquote className="flex flex-col gap-3 text-fg-on-brand">
-          <p className="t-h3">&ldquo;{quote.quote}&rdquo;</p>
-          <cite className="t-body-sm text-fg-on-brand/70 not-italic">— {quote.name}</cite>
-        </blockquote>
+        <AuthQuote />
       </div>
 
       <div className="flex flex-1 flex-col">

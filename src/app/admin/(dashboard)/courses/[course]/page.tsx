@@ -3,12 +3,10 @@
 import * as React from "react";
 import { useParams } from "next/navigation";
 import {
-  AlertTriangle,
   ChevronDown,
   ChevronUp,
   Copy,
   MoreVertical,
-  Pencil,
   Plus,
   Trash2,
 } from "lucide-react";

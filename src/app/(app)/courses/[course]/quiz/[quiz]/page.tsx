@@ -43,7 +43,7 @@ export default function QuizPage() {
       <div className="mx-auto flex max-w-xl flex-col items-center gap-4 py-16 text-center">
         <h1 className="t-h2 text-fg-primary">No attempts left</h1>
         <p className="t-body-sm text-fg-secondary">
-          Your best score was 52% against a 60% pass mark — you've used all 3 attempts.
+          Your best score was 52% against a 60% pass mark — you&rsquo;ve used all 3 attempts.
         </p>
         <div className="flex gap-3">
           <Button variant="secondary">Review the unit</Button>

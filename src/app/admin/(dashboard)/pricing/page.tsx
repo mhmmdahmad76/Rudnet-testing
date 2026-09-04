@@ -200,7 +200,7 @@ export default function AdminPricingPage() {
                         End LAUNCH20 in the UAE instead
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setDiscountConflict(false)}>
-                        Create it anyway (it just won't apply there)
+                        Create it anyway (it just won&rsquo;t apply there)
                       </Button>
                     </div>
                   </Alert>

@@ -32,9 +32,14 @@ function FilterPopover({ label, options, selected, onApply, computeCount }: Filt
   const [open, setOpen] = React.useState(false);
   const [draft, setDraft] = React.useState<string[]>(selected);
 
-  React.useEffect(() => {
+  // Reset the draft to the applied selection each time the popover opens —
+  // adjusted during render (not an effect) per React's guidance for
+  // resetting state in response to a prop/state change.
+  const [wasOpen, setWasOpen] = React.useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) setDraft(selected);
-  }, [open, selected]);
+  }
 
   const valueLabel = selected.length
     ? selected.map((v) => options.find((o) => o.value === v)?.label ?? v).join(", ")

@@ -1,3 +1,5 @@
+import * as React from "react";
+
 // No backend — onboarding answers live in localStorage so "Back returns to
 // the previous step with answers intact" actually works, and the Ready
 // screen can summarize every choice.
@@ -25,4 +27,32 @@ export function getOnboardingAnswers(): OnboardingAnswers {
 export function setOnboardingAnswers(patch: Partial<OnboardingAnswers>) {
   const current = getOnboardingAnswers();
   localStorage.setItem(KEY, JSON.stringify({ ...current, ...patch }));
+}
+
+// useSyncExternalStore requires getSnapshot to return a stable reference
+// when nothing changed, or it re-renders forever — cache by the raw string.
+let cachedRaw: string | null = null;
+let cachedSnapshot: OnboardingAnswers = {};
+
+function getSnapshot(): OnboardingAnswers {
+  if (typeof window === "undefined") return cachedSnapshot;
+  const raw = localStorage.getItem(KEY) ?? "{}";
+  if (raw !== cachedRaw) {
+    cachedRaw = raw;
+    try {
+      cachedSnapshot = JSON.parse(raw) as OnboardingAnswers;
+    } catch {
+      cachedSnapshot = {};
+    }
+  }
+  return cachedSnapshot;
+}
+
+function subscribeNoop() {
+  return () => {};
+}
+
+/** Reads the onboarding answers, SSR-safe and re-render-safe. */
+export function useOnboardingAnswers(): OnboardingAnswers {
+  return React.useSyncExternalStore(subscribeNoop, getSnapshot, getSnapshot);
 }
