@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,7 +12,13 @@ import { Field } from "@/components/lisaan/field";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { ChoiceCard } from "@/components/lisaan/choice-card";
 import { Alert } from "@/components/ui/alert";
-import { Modal } from "@/components/lisaan/modal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import {
   Sheet,
@@ -28,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { updatePost, useBlogPosts, type Post } from "@/lib/blog-store";
 
 interface PriceRow {
   region: string;
@@ -35,16 +43,6 @@ interface PriceRow {
   annual: number;
   vat: number;
   subscribers: number;
-}
-
-interface Post {
-  id: string;
-  title: string;
-  status: "draft" | "scheduled" | "published" | "archived";
-  category: string;
-  views: number;
-  updatedAt: string;
-  inboundLinks: number;
 }
 
 const STATUS_TONE = {
@@ -60,26 +58,7 @@ export default function AdminPricingPage() {
     { region: "Saudi Arabia", monthly: 39, annual: 390, vat: 15, subscribers: 3 },
     { region: "Rest of Gulf", monthly: 35, annual: 350, vat: 0, subscribers: 0 },
   ]);
-  const [posts, setPosts] = React.useState<Post[]>([
-    {
-      id: "p1",
-      title: "Why “since” and “for” trip up every Arabic speaker",
-      status: "published",
-      category: "Grammar",
-      views: 1240,
-      updatedAt: "2025-08-02",
-      inboundLinks: 4,
-    },
-    {
-      id: "p2",
-      title: "The five phrases that unlock most business calls",
-      status: "draft",
-      category: "Business",
-      views: 0,
-      updatedAt: "2025-08-20",
-      inboundLinks: 0,
-    },
-  ]);
+  const posts = useBlogPosts();
 
   const [editRegion, setEditRegion] = React.useState<PriceRow | null>(null);
   const [draftPrice, setDraftPrice] = React.useState({ monthly: 0, annual: 0, vat: 0 });
@@ -135,12 +114,23 @@ export default function AdminPricingPage() {
     setDiscountRegions([]);
   }
 
-  function unpublish(post: Post) {
-    setPosts((current) =>
-      current.map((p) => (p.id === post.id ? { ...p, status: "archived" as const } : p)),
-    );
+  /**
+   * Three distinct resolutions ordered by least damage — redirecting and
+   * archiving both keep inbound links resolving; only "unpublish anyway"
+   * turns them into 404s. See BUILD.md §9.25 BLOG-09.
+   */
+  function resolveUnpublish(post: Post, resolution: "redirect" | "archive" | "unpublish") {
+    if (resolution === "unpublish") {
+      updatePost(post.id, { status: "draft", unpublishResolution: "unpublish" });
+      toast.success(`"${post.title}" unpublished — its ${post.inboundLinks} inbound links now 404`);
+    } else if (resolution === "redirect") {
+      updatePost(post.id, { status: "archived", unpublishResolution: "redirect" });
+      toast.success(`"${post.title}" now redirects — its ${post.inboundLinks} inbound links keep working`);
+    } else {
+      updatePost(post.id, { status: "archived", unpublishResolution: "archive" });
+      toast.success(`"${post.title}" archived — the page stays live, just out of the blog index`);
+    }
     setUnpublishTarget(null);
-    toast.success(`"${post.title}" unpublished`);
   }
 
   return (
@@ -245,8 +235,8 @@ export default function AdminPricingPage() {
       <section className="rounded-2xl border border-stroke-default bg-bg-surface">
         <div className="flex items-center justify-between border-b border-stroke-subtle p-4">
           <p className="t-h5 text-fg-primary">Blog</p>
-          <Button size="sm" icon={<Plus />} onClick={() => toast("Opening the post editor…")}>
-            Write a post
+          <Button asChild size="sm" icon={<Plus />}>
+            <Link href="/admin/blog/new">Write a post</Link>
           </Button>
         </div>
         <Table>
@@ -263,7 +253,11 @@ export default function AdminPricingPage() {
           <TableBody>
             {posts.map((post) => (
               <TableRow key={post.id}>
-                <TableCell className="t-body-sm-strong">{post.title}</TableCell>
+                <TableCell className="t-body-sm-strong">
+                  <Link href={`/admin/blog/${post.id}`} className="hover:text-fg-link">
+                    {post.title}
+                  </Link>
+                </TableCell>
                 <TableCell>
                   <Badge tone={STATUS_TONE[post.status]}>{post.status}</Badge>
                 </TableCell>
@@ -345,18 +339,41 @@ export default function AdminPricingPage() {
         </DialogContent>
       </Dialog>
 
-      <Modal
-        open={Boolean(unpublishTarget)}
-        onOpenChange={(open) => !open && setUnpublishTarget(null)}
-        tone="danger"
-        title={`This post has ${unpublishTarget?.inboundLinks ?? 0} inbound links`}
-        body="Unpublishing without a plan turns those links into 404s. Redirecting or archiving keeps them working."
-        cancel={{ label: "Redirect instead", onClick: () => unpublishTarget && unpublish(unpublishTarget) }}
-        confirm={{
-          label: "Unpublish anyway",
-          onClick: () => unpublishTarget && unpublish(unpublishTarget),
-        }}
-      />
+      <AlertDialog open={Boolean(unpublishTarget)} onOpenChange={(open) => !open && setUnpublishTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogTitle>This post has {unpublishTarget?.inboundLinks ?? 0} inbound links</AlertDialogTitle>
+          <AlertDialogDescription>
+            Unpublishing without a plan turns those links into 404s. Redirecting or archiving keeps them
+            working — ordered here from least to most damage.
+          </AlertDialogDescription>
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <AlertDialogAction asChild>
+              <Button
+                variant="secondary"
+                onClick={() => unpublishTarget && resolveUnpublish(unpublishTarget, "redirect")}
+              >
+                Redirect instead
+              </Button>
+            </AlertDialogAction>
+            <AlertDialogAction asChild>
+              <Button
+                variant="secondary"
+                onClick={() => unpublishTarget && resolveUnpublish(unpublishTarget, "archive")}
+              >
+                Archive instead
+              </Button>
+            </AlertDialogAction>
+            <AlertDialogAction asChild>
+              <Button
+                variant="danger"
+                onClick={() => unpublishTarget && resolveUnpublish(unpublishTarget, "unpublish")}
+              >
+                Unpublish anyway
+              </Button>
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

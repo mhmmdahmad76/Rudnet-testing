@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import {
+  Bookmark,
   CircleDollarSign,
   CreditCard,
   FileText,
   Mail,
   MoreVertical,
   Search,
+  SlidersHorizontal,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -33,17 +35,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { StatTile } from "@/components/lisaan/stat-tile";
 import { FilterPopover } from "@/components/lisaan/filter-popover";
+import { AdvancedFiltersSheet } from "@/components/lisaan/advanced-filters-sheet";
 import { EmptyState } from "@/components/lisaan/empty-state";
 import { DataTable } from "@/components/lisaan/data-table";
 import { Modal } from "@/components/lisaan/modal";
+import { Field } from "@/components/lisaan/field";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { DEMO_STUDENTS, type Level, type Student } from "@/lib/demo-data";
+import { useSavedViews, type SavedView } from "@/lib/saved-views";
+import {
+  emptyCriteria,
+  extractCriteria,
+  hasAnyCriteria,
+  matchesCriteria,
+  useStudentFilters,
+} from "@/lib/use-student-filters";
 
 const ALL_LEVELS: Level[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const ALL_STATUSES: Student["status"][] = ["active", "trial", "pending", "lapsed"];
@@ -60,20 +74,26 @@ const STATUS_TONE: Record<Student["status"], "success" | "brand" | "warning" | "
   lapsed: "danger",
 };
 
-type SortKey = "newest" | "name" | "progress" | "level";
+type EmailTarget = { label: string };
+type ChangeLevelTarget = { label: string; count: number };
 
 export default function AdminOverviewPage() {
   const router = useRouter();
   const demoState = useSearchParams().get("state");
 
-  const [search, setSearch] = React.useState("");
-  const [levelFilter, setLevelFilter] = React.useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = React.useState<string[]>([]);
-  const [sortBy, setSortBy] = React.useState<SortKey>("newest");
-  const [columns, setColumns] = React.useState({ joined: true, actions: true });
+  const [filters, setFilters] = useStudentFilters();
+  const { q: search, level: levelFilter, status: statusFilter, sort: sortBy, hideCols } = filters;
+  const criteria = extractCriteria(filters);
+
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [grantOpen, setGrantOpen] = React.useState(false);
   const [emailFailed, setEmailFailed] = React.useState(demoState === "email-failed");
+  const [advancedOpen, setAdvancedOpen] = React.useState(false);
+  const [emailTarget, setEmailTarget] = React.useState<EmailTarget | null>(null);
+  const [changeLevelTarget, setChangeLevelTarget] = React.useState<ChangeLevelTarget | null>(null);
+  const [changeLevelValue, setChangeLevelValue] = React.useState<Level>("A1");
+
+  const savedViews = useSavedViews();
 
   const students = demoState === "empty" ? [] : DEMO_STUDENTS;
 
@@ -89,22 +109,24 @@ export default function AdminOverviewPage() {
   const matchesStatus = (s: Student, statuses: string[]) =>
     statuses.length === 0 || statuses.includes(s.status);
 
-  const baseForLevel = students.filter((s) => matchesSearch(s) && matchesStatus(s, statusFilter));
+  const searched = students.filter(matchesSearch);
+
+  const baseForLevel = searched.filter((s) => matchesStatus(s, statusFilter));
   const levelOptions = ALL_LEVELS.map((level) => ({
     value: level,
     label: level,
     count: baseForLevel.filter((s) => s.level === level).length,
   }));
 
-  const baseForStatus = students.filter((s) => matchesSearch(s) && matchesLevel(s, levelFilter));
+  const baseForStatus = searched.filter((s) => matchesLevel(s, levelFilter));
   const statusOptions = ALL_STATUSES.map((status) => ({
     value: status,
     label: STATUS_LABEL[status],
     count: baseForStatus.filter((s) => s.status === status).length,
   }));
 
-  const filtered = students.filter(
-    (s) => matchesSearch(s) && matchesLevel(s, levelFilter) && matchesStatus(s, statusFilter),
+  const filtered = searched.filter(
+    (s) => matchesLevel(s, levelFilter) && matchesStatus(s, statusFilter) && matchesCriteria(s, criteria),
   );
 
   const sorted = [...filtered].sort((a, b) => {
@@ -115,7 +137,32 @@ export default function AdminOverviewPage() {
   });
 
   const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
-  const hasFilters = levelFilter.length > 0 || statusFilter.length > 0;
+  const hasFilters = levelFilter.length > 0 || statusFilter.length > 0 || hasAnyCriteria(criteria);
+  const advancedOnlyCount =
+    (criteria.minProgress !== null ? 1 : 0) +
+    (criteria.maxProgress !== null ? 1 : 0) +
+    (criteria.dateFrom !== null || criteria.dateTo !== null ? 1 : 0) +
+    (criteria.payment.length > 0 ? 1 : 0);
+
+  function clearAllFilters() {
+    setFilters({ ...emptyCriteria() });
+  }
+
+  function applySavedView(view: SavedView) {
+    setFilters({ ...view.criteria });
+  }
+
+  function openChangeLevel(target: ChangeLevelTarget) {
+    setChangeLevelValue("A1");
+    setChangeLevelTarget(target);
+  }
+
+  function confirmChangeLevel() {
+    if (!changeLevelTarget) return;
+    toast.success(`${changeLevelTarget.label} moved to ${changeLevelValue} — progress kept`);
+    setChangeLevelTarget(null);
+    if (changeLevelTarget.count > 1) setRowSelection({});
+  }
 
   const columnDefs = React.useMemo<ColumnDef<Student, unknown>[]>(() => {
     const base: ColumnDef<Student, unknown>[] = [
@@ -178,7 +225,7 @@ export default function AdminOverviewPage() {
       },
     ];
 
-    if (columns.joined) {
+    if (!hideCols.includes("joined")) {
       base.push({
         accessorKey: "joinedAt",
         header: "Joined",
@@ -187,7 +234,7 @@ export default function AdminOverviewPage() {
       });
     }
 
-    if (columns.actions) {
+    if (!hideCols.includes("actions")) {
       base.push({
         id: "actions",
         header: "",
@@ -208,10 +255,12 @@ export default function AdminOverviewPage() {
               <DropdownMenuItem asChild>
                 <Link href={`/admin/students/${row.original.id}`}>View</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast(`Email sent to ${row.original.name}`)}>
+              <DropdownMenuItem onClick={() => setEmailTarget({ label: row.original.name })}>
                 Email
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast(`Change level for ${row.original.name}`)}>
+              <DropdownMenuItem
+                onClick={() => openChangeLevel({ label: row.original.name, count: 1 })}
+              >
                 Change level
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => toast(`Access granted to ${row.original.name}`)}>
@@ -230,26 +279,16 @@ export default function AdminOverviewPage() {
     }
 
     return base;
-  }, [columns]);
+  }, [hideCols]);
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="t-h2 text-fg-primary">Overview</h1>
         <div className="flex gap-2">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="secondary" icon={<Mail />}>
-                Email students
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="end">
-              <SheetTitle>Email students</SheetTitle>
-              <SheetDescription>
-                Recipients: {selectedIds.length > 0 ? `${selectedIds.length} selected` : "all students"}
-              </SheetDescription>
-            </SheetContent>
-          </Sheet>
+          <Button variant="secondary" icon={<Mail />} onClick={() => setEmailTarget({ label: "all students" })}>
+            Email students
+          </Button>
           <Button asChild icon={<UserPlus />}>
             <Link href="/admin/courses/new">New course</Link>
           </Button>
@@ -300,7 +339,7 @@ export default function AdminOverviewPage() {
                 placeholder="Search"
                 className="w-48 ps-9"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => setFilters({ q: event.target.value })}
                 disabled={students.length === 0}
               />
             </div>
@@ -311,8 +350,8 @@ export default function AdminOverviewPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {(["newest", "name", "progress", "level"] as SortKey[]).map((key) => (
-                  <DropdownMenuItem key={key} onClick={() => setSortBy(key)}>
+                {(["newest", "name", "progress", "level"] as const).map((key) => (
+                  <DropdownMenuItem key={key} onClick={() => setFilters({ sort: key })}>
                     {key === "newest" ? "Newest" : key[0]!.toUpperCase() + key.slice(1)}
                   </DropdownMenuItem>
                 ))}
@@ -326,14 +365,22 @@ export default function AdminOverviewPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuCheckboxItem
-                  checked={columns.joined}
-                  onCheckedChange={(checked) => setColumns((c) => ({ ...c, joined: checked === true }))}
+                  checked={!hideCols.includes("joined")}
+                  onCheckedChange={(checked) =>
+                    setFilters({
+                      hideCols: checked ? hideCols.filter((c) => c !== "joined") : [...hideCols, "joined"],
+                    })
+                  }
                 >
                   Joined
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
-                  checked={columns.actions}
-                  onCheckedChange={(checked) => setColumns((c) => ({ ...c, actions: checked === true }))}
+                  checked={!hideCols.includes("actions")}
+                  onCheckedChange={(checked) =>
+                    setFilters({
+                      hideCols: checked ? hideCols.filter((c) => c !== "actions") : [...hideCols, "actions"],
+                    })
+                  }
                 >
                   Actions
                 </DropdownMenuCheckboxItem>
@@ -347,10 +394,23 @@ export default function AdminOverviewPage() {
             <span className="t-label-md text-fg-brand">
               {selectedIds.length} student{selectedIds.length === 1 ? "" : "s"} selected
             </span>
-            <Button size="sm" variant="secondary" onClick={() => toast(`Emailing ${selectedIds.length} students`)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setEmailTarget({ label: `${selectedIds.length} selected students` })}
+            >
               Email
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => toast("Level change queued")}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                openChangeLevel({
+                  label: `${selectedIds.length} student${selectedIds.length === 1 ? "" : "s"}`,
+                  count: selectedIds.length,
+                })
+              }
+            >
               Change level
             </Button>
             <Button size="sm" variant="danger" onClick={() => setGrantOpen(true)}>
@@ -369,28 +429,46 @@ export default function AdminOverviewPage() {
               label="Level"
               options={levelOptions}
               selected={levelFilter}
-              onApply={setLevelFilter}
-              computeCount={(draft) =>
-                baseForLevel.filter((s) => matchesLevel(s, draft)).length
-              }
+              onApply={(values) => setFilters({ level: values })}
+              computeCount={(draft) => baseForLevel.filter((s) => matchesLevel(s, draft)).length}
             />
             <FilterPopover
               label="Status"
               options={statusOptions}
               selected={statusFilter}
-              onApply={setStatusFilter}
-              computeCount={(draft) =>
-                baseForStatus.filter((s) => matchesStatus(s, draft)).length
-              }
+              onApply={(values) => setFilters({ status: values })}
+              computeCount={(draft) => baseForStatus.filter((s) => matchesStatus(s, draft)).length}
             />
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<SlidersHorizontal />}
+              onClick={() => setAdvancedOpen(true)}
+              disabled={students.length === 0}
+            >
+              More filters{advancedOnlyCount > 0 ? ` (${advancedOnlyCount})` : ""}
+            </Button>
+            {savedViews.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" icon={<Bookmark />}>
+                    Saved views
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {savedViews.map((view) => (
+                    <DropdownMenuItem key={view.id} onClick={() => applySavedView(view)}>
+                      {view.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {hasFilters && (
               <button
                 type="button"
                 className="t-label-sm text-fg-link hover:text-fg-link-hover"
-                onClick={() => {
-                  setLevelFilter([]);
-                  setStatusFilter([]);
-                }}
+                onClick={clearAllFilters}
               >
                 Clear all
               </button>
@@ -425,11 +503,7 @@ export default function AdminOverviewPage() {
               .join(", ") || "Your search"} — nobody matches yet.`}
             action={{
               label: "Clear filters",
-              onClick: () => {
-                setSearch("");
-                setLevelFilter([]);
-                setStatusFilter([]);
-              },
+              onClick: () => setFilters({ q: "", ...emptyCriteria() }),
             }}
           />
         ) : (
@@ -498,6 +572,63 @@ export default function AdminOverviewPage() {
           </>
         )}
       </div>
+
+      <AdvancedFiltersSheet
+        open={advancedOpen}
+        onOpenChange={setAdvancedOpen}
+        students={searched}
+        criteria={criteria}
+        onApply={(next) => setFilters({ ...next })}
+      />
+
+      <Sheet open={Boolean(emailTarget)} onOpenChange={(open) => !open && setEmailTarget(null)}>
+        <SheetContent side="end">
+          <SheetTitle>Email students</SheetTitle>
+          <SheetDescription>Recipients: {emailTarget?.label}</SheetDescription>
+          <div className="mt-6 flex flex-col gap-4">
+            <Field label="Subject">
+              <Input placeholder="What's new this week" />
+            </Field>
+            <Button
+              onClick={() => {
+                toast.success(`Email queued for ${emailTarget?.label}`);
+                setEmailTarget(null);
+              }}
+            >
+              Send
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Dialog open={Boolean(changeLevelTarget)} onOpenChange={(open) => !open && setChangeLevelTarget(null)}>
+        <DialogContent>
+          <DialogTitle>Change level for {changeLevelTarget?.label}</DialogTitle>
+          <DialogDescription>This does not reset progress.</DialogDescription>
+          <div className="mt-4 flex flex-col gap-4">
+            <Field label="New level">
+              <Select value={changeLevelValue} onValueChange={(v) => setChangeLevelValue(v as Level)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_LEVELS.map((level) => (
+                    <SelectItem key={level} value={level}>
+                      {level}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setChangeLevelTarget(null)}>
+                Cancel
+              </Button>
+              <Button onClick={confirmChangeLevel}>Save</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Modal
         open={grantOpen}
