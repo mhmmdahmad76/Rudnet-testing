@@ -21,12 +21,15 @@ export interface SiteHeaderProps {
   locale: Locale;
   links: SiteHeaderLink[];
   signedIn?: boolean;
+  /** Overrides the default sign-in/dashboard button — e.g. an account menu
+   * when this header is reused for the signed-in app shell's mobile nav. */
+  trailing?: React.ReactNode;
   className?: string;
 }
 
 /** Desktop shows the full nav inline; mobile collapses to a hamburger that
  * opens a sheet from the start edge. One component, responsive by CSS. */
-function SiteHeader({ locale, links, signedIn, className }: SiteHeaderProps) {
+function SiteHeader({ locale, links, signedIn, trailing, className }: SiteHeaderProps) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -55,15 +58,18 @@ function SiteHeader({ locale, links, signedIn, className }: SiteHeaderProps) {
 
         <div className="hidden items-center gap-3 lg:flex">
           <LanguageSwitcher locale={locale} />
-          <Button asChild variant={signedIn ? "primary" : "secondary"} size="sm">
-            <Link href={signedIn ? "/dashboard" : "/sign-in"}>
-              {signedIn ? "Dashboard" : "Sign in"}
-            </Link>
-          </Button>
+          {trailing ?? (
+            <Button asChild variant={signedIn ? "primary" : "secondary"} size="sm">
+              <Link href={signedIn ? "/dashboard" : "/sign-in"}>
+                {signedIn ? "Dashboard" : "Sign in"}
+              </Link>
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
           <LanguageSwitcher locale={locale} />
+          {trailing}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <IconButton aria-label="Open menu" variant="ghost">
@@ -84,13 +90,15 @@ function SiteHeader({ locale, links, signedIn, className }: SiteHeaderProps) {
                   </Link>
                 ))}
               </nav>
-              <div className="mt-6 flex flex-col gap-2">
-                <Button asChild variant={signedIn ? "primary" : "secondary"}>
-                  <Link href={signedIn ? "/dashboard" : "/sign-in"}>
-                    {signedIn ? "Dashboard" : "Sign in"}
-                  </Link>
-                </Button>
-              </div>
+              {!trailing && (
+                <div className="mt-6 flex flex-col gap-2">
+                  <Button asChild variant={signedIn ? "primary" : "secondary"}>
+                    <Link href={signedIn ? "/dashboard" : "/sign-in"}>
+                      {signedIn ? "Dashboard" : "Sign in"}
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </SheetContent>
           </Sheet>
         </div>
