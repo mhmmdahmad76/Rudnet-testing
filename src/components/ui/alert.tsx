@@ -20,7 +20,7 @@ function Alert({ tone, title, body, className, children }: AlertProps) {
       className={cn("flex gap-3 rounded-lg border p-4", container, className)}
     >
       <Icon className={cn("size-5 shrink-0", icon)} aria-hidden />
-      <div className="flex flex-col gap-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="t-body-sm-strong text-fg-primary">{title}</p>
         {body && <p className="t-body-sm text-fg-secondary">{body}</p>}
         {children}
