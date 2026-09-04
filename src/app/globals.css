@@ -1,26 +1,530 @@
+/* ============================================================================
+   Lisaan — token layer
+   Nothing else in the app defines a colour.
+
+   Two layers:
+     1. Reference  (--violet-700, --grey-900 …)  — the raw ramps. Never used in a component.
+     2. Semantic   (--bg-brand, --fg-primary …)  — what components are allowed to reference.
+
+   If a component file contains "violet" or a hex, it is wrong.
+   ========================================================================== */
+
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/* ---------------------------------------------------------------------------
+   1. REFERENCE — 10 families × 10 steps, generated in OKLCH, gamut-mapped to sRGB.
+      violet/700 IS the brand colour #4409CC, exactly — the ramp was built around it.
+   ------------------------------------------------------------------------ */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* violet — brand. hue 280.4 */
+  --violet-50:  #f6f6ff;
+  --violet-100: #eaeaff;
+  --violet-200: #d7d8ff;
+  --violet-300: #bec0ff;
+  --violet-400: #9f9fff;
+  --violet-500: #7c75ff;
+  --violet-600: #5e43f3;
+  --violet-700: #4409cc;   /* ← the brand */
+  --violet-800: #2a0092;
+  --violet-900: #160060;
+
+  /* yellow — highlight, achievement, progress. hue 91.3 */
+  --yellow-50:  #fffaeb;
+  --yellow-100: #fff3d0;
+  --yellow-200: #ffe8a8;
+  --yellow-300: #ffdd76;
+  --yellow-400: #ffd028;   /* ← the highlight */
+  --yellow-500: #eabd00;
+  --yellow-600: #cca400;
+  --yellow-700: #aa8800;
+  --yellow-800: #806600;
+  --yellow-900: #584500;
+
+  /* grey — cool neutral, hue 284.5. grey-900 is the ink. */
+  --grey-50:  #f1f1f5;
+  --grey-100: #e9e9ee;
+  --grey-200: #dddde4;
+  --grey-300: #cbcbd3;
+  --grey-400: #aeafb7;
+  --grey-500: #7b7b84;
+  --grey-600: #5e5e67;
+  --grey-700: #4f4f58;
+  --grey-800: #2b2c34;
+  --grey-900: #0b0b12;     /* ← the ink */
+
+  /* sea — supporting blue. data, the CEFR ladder. never a call to action. */
+  --sea-50:  #f1f8ff;
+  --sea-100: #dfeeff;
+  --sea-200: #c4dffd;
+  --sea-300: #a0cbfb;
+  --sea-400: #73b0f3;
+  --sea-500: #458fde;
+  --sea-600: #136dbf;
+  --sea-700: #005093;
+  --sea-800: #003768;
+  --sea-900: #002244;
+
+  --success-50:  #f0faf2;
+  --success-100: #dff2e3;
+  --success-200: #c5e6cc;
+  --success-300: #a0d6ad;
+  --success-400: #71c088;
+  --success-500: #3fa362;
+  --success-600: #008240;
+  --success-700: #00612e;
+  --success-800: #00431e;
+  --success-900: #002a10;
+
+  --warning-50:  #fef5ec;
+  --warning-100: #f9ead7;
+  --warning-200: #f2d7b6;
+  --warning-300: #eabe89;
+  --warning-400: #da9e4d;
+  --warning-500: #be7c00;
+  --warning-600: #945f00;
+  --warning-700: #6e4600;
+  --warning-800: #4d2f00;
+  --warning-900: #311d00;
+
+  --danger-50:  #fff4f3;
+  --danger-100: #ffe5e3;
+  --danger-200: #ffceca;
+  --danger-300: #ffaea8;
+  --danger-400: #f9847e;
+  --danger-500: #e15856;
+  --danger-600: #c02a32;
+  --danger-700: #990019;
+  --danger-800: #6c000e;
+  --danger-900: #470006;
+
+  --info-50:  #f2f7ff;
+  --info-100: #e0eeff;
+  --info-200: #c5deff;
+  --info-300: #a1caff;
+  --info-400: #6faefd;
+  --info-500: #418de9;
+  --info-600: #096acb;
+  --info-700: #004e9b;
+  --info-800: #00356e;
+  --info-900: #002148;
+
+  /* Alpha ramps — the only shades that work over an unknown ground:
+     a lesson thumbnail, an instructor photo, a coloured card.
+     Hover, pressed, dividers and scrims are all built from these. */
+  --white-a04: rgb(255 255 255 / .04);
+  --white-a08: rgb(255 255 255 / .08);
+  --white-a12: rgb(255 255 255 / .12);
+  --white-a16: rgb(255 255 255 / .16);
+  --white-a24: rgb(255 255 255 / .24);
+  --white-a32: rgb(255 255 255 / .32);
+  --white-a40: rgb(255 255 255 / .40);
+  --white-a56: rgb(255 255 255 / .56);
+  --white-a72: rgb(255 255 255 / .72);
+  --white-a88: rgb(255 255 255 / .88);
+
+  --black-a04: rgb(0 0 0 / .04);
+  --black-a08: rgb(0 0 0 / .08);
+  --black-a12: rgb(0 0 0 / .12);
+  --black-a16: rgb(0 0 0 / .16);
+  --black-a24: rgb(0 0 0 / .24);
+  --black-a32: rgb(0 0 0 / .32);
+  --black-a40: rgb(0 0 0 / .40);
+  --black-a56: rgb(0 0 0 / .56);
+  --black-a72: rgb(0 0 0 / .72);
+  --black-a88: rgb(0 0 0 / .88);
 }
+
+/* ---------------------------------------------------------------------------
+   2. SEMANTIC — three categories and only three:
+      background / content / stroke.
+      If a value does not fit one of the three, it does not belong in the system.
+   ------------------------------------------------------------------------ */
+
+:root {
+  /* --- background ------------------------------------------------------- */
+  --bg-canvas:              var(--grey-50);
+  --bg-surface:             #ffffff;
+  --bg-surface-raised:      #ffffff;
+  --bg-surface-sunken:      var(--grey-100);
+  --bg-surface-hover:       var(--grey-50);
+  --bg-subtle:              var(--grey-100);
+  --bg-subtle-hover:        var(--grey-200);
+  --bg-muted:               var(--grey-200);
+  --bg-muted-hover:         var(--grey-300);
+  --bg-hover:               var(--black-a04);
+  --bg-pressed:             var(--black-a08);
+  --bg-selected:            var(--violet-50);
+  --bg-disabled:            var(--grey-200);
+  --bg-inverse:             var(--grey-900);
+  --bg-brand:               var(--violet-700);
+  --bg-brand-hover:         var(--violet-600);   /* brighter, not darker */
+  --bg-brand-subtle:        var(--violet-50);
+  --bg-accent:              var(--yellow-400);
+  --bg-accent-subtle:       var(--yellow-50);
+  --bg-achievement:         var(--yellow-400);
+  --bg-achievement-subtle:  var(--yellow-50);
+  --bg-success-subtle:      var(--success-50);
+  --bg-warning-subtle:      var(--warning-50);
+  --bg-danger:              var(--danger-600);
+  --bg-danger-hover:        var(--danger-700);
+  --bg-danger-subtle:       var(--danger-50);
+  --bg-info-subtle:         var(--info-50);
+  --bg-overlay:             var(--black-a56);
+  --bg-skeleton:            var(--grey-200);
+
+  /* --- content (text and icons) ----------------------------------------- */
+  --fg-primary:      var(--grey-900);
+  --fg-secondary:    var(--grey-700);
+  --fg-tertiary:     var(--grey-600);
+  --fg-placeholder:  var(--grey-600);
+  --fg-disabled:     var(--grey-500);
+  --fg-inverse:      var(--grey-50);
+  --fg-on-brand:     #ffffff;
+  --fg-on-accent:    var(--grey-900);   /* ink on yellow, in BOTH modes */
+  --fg-brand:        var(--violet-700);
+  --fg-accent:       var(--yellow-800); /* dark amber — yellow is not a text colour */
+  --fg-link:         var(--violet-700);
+  --fg-link-hover:   var(--violet-600);
+  --fg-achievement:  var(--yellow-800);
+  --fg-success:      var(--success-700);
+  --fg-warning:      var(--warning-700);
+  --fg-danger:       var(--danger-700);
+  --fg-info:         var(--info-700);
+
+  /* --- stroke (borders and dividers) ------------------------------------ */
+  --stroke-subtle:   var(--grey-100);
+  --stroke-default:  var(--grey-200);
+  --stroke-strong:   var(--grey-400);
+  --stroke-inverse:  var(--grey-900);
+  --stroke-brand:    var(--violet-700);
+  --stroke-accent:   var(--yellow-500);
+  --stroke-focus:    var(--violet-600);
+  --stroke-disabled: var(--grey-200);
+  --stroke-success:  var(--success-600);
+  --stroke-warning:  var(--warning-600);
+  --stroke-danger:   var(--danger-600);
+  --stroke-info:     var(--info-600);
+}
+
+.dark,
+[data-theme="dark"] {
+  --bg-canvas:              var(--grey-900);
+  --bg-surface:             var(--grey-800);
+  --bg-surface-raised:      var(--grey-700);
+  --bg-surface-sunken:      var(--grey-900);
+  --bg-surface-hover:       var(--white-a04);
+  --bg-subtle:              var(--white-a04);
+  --bg-subtle-hover:        var(--white-a08);
+  --bg-muted:               var(--white-a08);
+  --bg-muted-hover:         var(--white-a16);
+  --bg-hover:               var(--white-a08);
+  --bg-pressed:             var(--white-a12);
+  --bg-selected:            var(--violet-900);
+  --bg-disabled:            var(--white-a08);
+  --bg-inverse:             var(--grey-50);
+  --bg-brand:               var(--violet-500);
+  --bg-brand-hover:         var(--violet-400);   /* brighter again */
+  --bg-brand-subtle:        var(--violet-900);
+  --bg-accent:              var(--yellow-400);   /* the yellow does not change */
+  --bg-accent-subtle:       var(--yellow-900);
+  --bg-achievement:         var(--yellow-400);
+  --bg-achievement-subtle:  var(--yellow-900);
+  --bg-success-subtle:      var(--success-900);
+  --bg-warning-subtle:      var(--warning-900);
+  --bg-danger:              var(--danger-400);
+  --bg-danger-hover:        var(--danger-300);
+  --bg-danger-subtle:       var(--danger-900);
+  --bg-info-subtle:         var(--info-900);
+  --bg-overlay:             var(--black-a72);
+  --bg-skeleton:            var(--white-a08);
+
+  --fg-primary:      var(--grey-50);
+  --fg-secondary:    var(--grey-300);
+  --fg-tertiary:     var(--grey-400);
+  --fg-placeholder:  var(--grey-400);
+  --fg-disabled:     var(--grey-600);
+  --fg-inverse:      var(--grey-900);
+  --fg-on-brand:     var(--grey-900);
+  --fg-on-accent:    var(--grey-900);
+  --fg-brand:        var(--violet-300);
+  --fg-accent:       var(--yellow-300);
+  --fg-link:         var(--violet-300);
+  --fg-link-hover:   var(--violet-200);
+  --fg-achievement:  var(--yellow-300);
+  --fg-success:      var(--success-300);
+  --fg-warning:      var(--warning-300);
+  --fg-danger:       var(--danger-300);
+  --fg-info:         var(--info-300);
+
+  --stroke-subtle:   var(--white-a08);
+  --stroke-default:  var(--white-a12);
+  --stroke-strong:   var(--white-a24);
+  --stroke-inverse:  var(--grey-50);
+  --stroke-brand:    var(--violet-500);
+  --stroke-accent:   var(--yellow-400);
+  --stroke-focus:    var(--violet-300);
+  --stroke-disabled: var(--white-a08);
+  --stroke-success:  var(--success-400);
+  --stroke-warning:  var(--warning-400);
+  --stroke-danger:   var(--danger-400);
+  --stroke-info:     var(--info-400);
+}
+
+/* ---------------------------------------------------------------------------
+   3. ELEVATION and MOTION
+      Two shadows per step: a tight contact shadow that fixes the object to the
+      surface, and a wide ambient one that gives it height. Both tinted with ink —
+      neutral black goes grey and dirty over the canvas.
+   ------------------------------------------------------------------------ */
+
+:root {
+  --elev-01:    0 1px 2px rgb(11 11 18 / .05), 0 1px 3px rgb(11 11 18 / .04);
+  --elev-02:    0 2px 4px -1px rgb(11 11 18 / .05), 0 4px 8px -2px rgb(11 11 18 / .06);
+  --elev-03:    0 4px 8px -2px rgb(11 11 18 / .05), 0 12px 16px -4px rgb(11 11 18 / .08);
+  --elev-04:    0 8px 8px -4px rgb(11 11 18 / .04), 0 20px 24px -4px rgb(11 11 18 / .10);
+  --elev-05:    0 24px 48px -12px rgb(11 11 18 / .18);
+  --elev-focus: 0 0 0 4px rgb(124 117 255 / .42);
+  --elev-inner: inset 0 1px 2px rgb(11 11 18 / .06);
+
+  --dur-instant:    80ms;
+  --dur-fast:      150ms;
+  --dur-base:      220ms;
+  --dur-slow:      350ms;
+  --dur-slower:    500ms;
+  --dur-deliberate:800ms;
+
+  --ease-standard: cubic-bezier(.2, 0, 0, 1);
+  --ease-entrance: cubic-bezier(0, 0, .2, 1);
+  --ease-exit:     cubic-bezier(.4, 0, 1, 1);
+  --ease-emphasis: cubic-bezier(.32, .72, 0, 1);
+  --ease-spring:   cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* elevation/01 table row hover · 02 cards · 03 popovers · 04 drawers
+   05 modals · focus every focus ring · inner pressed states */
+
+/* ---------------------------------------------------------------------------
+   4. TAILWIND MAPPING
+      After this block a component writes  bg-bg-surface  text-fg-primary
+      border-stroke-default  rounded-lg  — and never a raw colour.
+   ------------------------------------------------------------------------ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg-canvas:             var(--bg-canvas);
+  --color-bg-surface:            var(--bg-surface);
+  --color-bg-surface-raised:     var(--bg-surface-raised);
+  --color-bg-surface-sunken:     var(--bg-surface-sunken);
+  --color-bg-surface-hover:      var(--bg-surface-hover);
+  --color-bg-subtle:             var(--bg-subtle);
+  --color-bg-subtle-hover:       var(--bg-subtle-hover);
+  --color-bg-muted:              var(--bg-muted);
+  --color-bg-muted-hover:        var(--bg-muted-hover);
+  --color-bg-hover:              var(--bg-hover);
+  --color-bg-pressed:            var(--bg-pressed);
+  --color-bg-selected:           var(--bg-selected);
+  --color-bg-disabled:           var(--bg-disabled);
+  --color-bg-inverse:            var(--bg-inverse);
+  --color-bg-brand:              var(--bg-brand);
+  --color-bg-brand-hover:        var(--bg-brand-hover);
+  --color-bg-brand-subtle:       var(--bg-brand-subtle);
+  --color-bg-accent:             var(--bg-accent);
+  --color-bg-accent-subtle:      var(--bg-accent-subtle);
+  --color-bg-achievement:        var(--bg-achievement);
+  --color-bg-achievement-subtle: var(--bg-achievement-subtle);
+  --color-bg-success-subtle:     var(--bg-success-subtle);
+  --color-bg-warning-subtle:     var(--bg-warning-subtle);
+  --color-bg-danger:             var(--bg-danger);
+  --color-bg-danger-hover:       var(--bg-danger-hover);
+  --color-bg-danger-subtle:      var(--bg-danger-subtle);
+  --color-bg-info-subtle:        var(--bg-info-subtle);
+  --color-bg-overlay:            var(--bg-overlay);
+  --color-bg-skeleton:           var(--bg-skeleton);
+
+  --color-fg-primary:      var(--fg-primary);
+  --color-fg-secondary:    var(--fg-secondary);
+  --color-fg-tertiary:     var(--fg-tertiary);
+  --color-fg-placeholder:  var(--fg-placeholder);
+  --color-fg-disabled:     var(--fg-disabled);
+  --color-fg-inverse:      var(--fg-inverse);
+  --color-fg-on-brand:     var(--fg-on-brand);
+  --color-fg-on-accent:    var(--fg-on-accent);
+  --color-fg-brand:        var(--fg-brand);
+  --color-fg-accent:       var(--fg-accent);
+  --color-fg-link:         var(--fg-link);
+  --color-fg-link-hover:   var(--fg-link-hover);
+  --color-fg-achievement:  var(--fg-achievement);
+  --color-fg-success:      var(--fg-success);
+  --color-fg-warning:      var(--fg-warning);
+  --color-fg-danger:       var(--fg-danger);
+  --color-fg-info:         var(--fg-info);
+
+  --color-stroke-subtle:   var(--stroke-subtle);
+  --color-stroke-default:  var(--stroke-default);
+  --color-stroke-strong:   var(--stroke-strong);
+  --color-stroke-inverse:  var(--stroke-inverse);
+  --color-stroke-brand:    var(--stroke-brand);
+  --color-stroke-accent:   var(--stroke-accent);
+  --color-stroke-focus:    var(--stroke-focus);
+  --color-stroke-disabled: var(--stroke-disabled);
+  --color-stroke-success:  var(--stroke-success);
+  --color-stroke-warning:  var(--stroke-warning);
+  --color-stroke-danger:   var(--stroke-danger);
+  --color-stroke-info:     var(--stroke-info);
+
+  /* radii — roundness rises with surface size, nested corners never share one */
+  --radius-xs:  4px;   /* — */
+  --radius-sm:  6px;   /* small chips */
+  --radius-md:  8px;   /* inputs, filter triggers, toolbar buttons */
+  --radius-lg:  12px;  /* buttons */
+  --radius-xl:  16px;  /* cards */
+  --radius-2xl: 20px;  /* panels */
+  --radius-3xl: 28px;  /* modals */
+
+  /* control heights */
+  --size-control-sm: 32px;
+  --size-control-md: 40px;
+  --size-control-lg: 48px;
+  --size-control-xl: 56px;
+
+  --font-display: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+  --font-body:    var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    var(--font-plex-mono), ui-monospace, monospace;
+
+  --breakpoint-sm: 769px;    /* tablet-min */
+  --breakpoint-lg: 1024px;   /* desktop-min */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---------------------------------------------------------------------------
+   5. TYPOGRAPHY
+      One scale. The RTL block redefines size, leading, tracking and weight —
+      exactly what the Figma Typography collection does with its two modes.
+   ------------------------------------------------------------------------ */
+
+:root {
+  --text-2xs: 11px;  --lh-2xs: 16px;
+  --text-xs:  12px;  --lh-xs:  18px;
+  --text-sm:  14px;  --lh-sm:  20px;
+  --text-md:  16px;  --lh-md:  24px;
+  --text-lg:  18px;  --lh-lg:  28px;
+  --text-xl:  20px;  --lh-xl:  30px;
+  --text-2xl: 24px;  --lh-2xl: 32px;
+  --text-3xl: 30px;  --lh-3xl: 38px;
+  --text-4xl: 36px;  --lh-4xl: 42px;
+  --text-5xl: 48px;  --lh-5xl: 54px;
+  --text-6xl: 60px;  --lh-6xl: 64px;
+
+  --tracking-tight:  -1.2px;
+  --tracking-snug:   -0.6px;
+  --tracking-normal:  0;
+  --tracking-wide:    0.4px;
+  --tracking-caps:    1.2px;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+}
+
+[dir="rtl"] {
+  /* Arabic runs a smaller x-height at the same nominal size, and its
+     ascenders, descenders and diacritics collide at Latin leading. */
+  --text-2xs: 12px;  --lh-2xs: 20px;
+  --text-xs:  13px;  --lh-xs:  22px;
+  --text-sm:  15px;  --lh-sm:  24px;
+  --text-md:  17px;  --lh-md:  30px;
+  --text-lg:  19px;  --lh-lg:  32px;
+  --text-xl:  21px;  --lh-xl:  36px;
+  --text-2xl: 25px;  --lh-2xl: 38px;
+  --text-3xl: 31px;  --lh-3xl: 46px;
+  --text-4xl: 37px;  --lh-4xl: 52px;
+  --text-5xl: 48px;  --lh-5xl: 66px;
+  --text-6xl: 60px;  --lh-6xl: 78px;
+
+  /* Letter-spacing severs Arabic letter joins. Not a value to tune —
+     a value to switch off. */
+  --tracking-tight:  0;
+  --tracking-snug:   0;
+  --tracking-normal: 0;
+  --tracking-wide:   0;
+  --tracking-caps:   0;
+
+  /* Plex Sans Arabic has no SemiBold, and Arabic carries less apparent
+     weight at the same optical size. */
+  --weight-semibold: 700;
+
+  --font-display: var(--font-plex-arabic), sans-serif;
+  --font-body:    var(--font-plex-arabic), sans-serif;
+}
+
+/* The 25 text styles, as utility classes. Use these, not ad-hoc size classes. */
+@layer components {
+  .t-display-2xl { font: var(--weight-bold) var(--text-6xl)/var(--lh-6xl) var(--font-display); letter-spacing: var(--tracking-tight); }
+  .t-display-xl  { font: var(--weight-bold) var(--text-5xl)/var(--lh-5xl) var(--font-display); letter-spacing: var(--tracking-tight); }
+  .t-display-lg  { font: var(--weight-bold) var(--text-4xl)/var(--lh-4xl) var(--font-display); letter-spacing: var(--tracking-tight); }
+  .t-h1          { font: var(--weight-bold) var(--text-3xl)/var(--lh-3xl) var(--font-display); letter-spacing: var(--tracking-tight); }
+  .t-h2          { font: var(--weight-bold) var(--text-2xl)/var(--lh-2xl) var(--font-display); letter-spacing: var(--tracking-snug); }
+  .t-h3          { font: var(--weight-bold) var(--text-xl)/var(--lh-xl) var(--font-display);   letter-spacing: var(--tracking-snug); }
+  .t-h4          { font: var(--weight-semibold) var(--text-lg)/var(--lh-lg) var(--font-display); letter-spacing: var(--tracking-snug); }
+  .t-h5          { font: var(--weight-semibold) var(--text-md)/var(--lh-md) var(--font-display); }
+  .t-h6          { font: var(--weight-semibold) var(--text-sm)/var(--lh-sm) var(--font-display); }
+
+  .t-body-lg     { font: var(--weight-regular) var(--text-lg)/var(--lh-lg) var(--font-body); }
+  .t-body-md     { font: var(--weight-regular) var(--text-md)/var(--lh-md) var(--font-body); }
+  .t-body-sm     { font: var(--weight-regular) var(--text-sm)/var(--lh-sm) var(--font-body); }
+  .t-body-xs     { font: var(--weight-regular) var(--text-xs)/var(--lh-xs) var(--font-body); }
+  .t-body-md-strong { font: var(--weight-medium) var(--text-md)/var(--lh-md) var(--font-body); }
+  .t-body-sm-strong { font: var(--weight-medium) var(--text-sm)/var(--lh-sm) var(--font-body); }
+
+  .t-label-lg    { font: var(--weight-medium) var(--text-md)/var(--lh-sm) var(--font-body); }
+  .t-label-md    { font: var(--weight-medium) var(--text-sm)/var(--lh-sm) var(--font-body); }
+  .t-label-sm    { font: var(--weight-medium) var(--text-xs)/var(--lh-xs) var(--font-body); }
+
+  .t-overline    { font: var(--weight-semibold) var(--text-2xs)/var(--lh-2xs) var(--font-body);
+                   letter-spacing: var(--tracking-caps); text-transform: uppercase; }
+
+  .t-button-lg   { font: var(--weight-semibold) var(--text-md)/var(--lh-sm) var(--font-body); }
+  .t-button-md   { font: var(--weight-semibold) var(--text-sm)/var(--lh-sm) var(--font-body); }
+  .t-button-sm   { font: var(--weight-semibold) var(--text-xs)/var(--lh-xs) var(--font-body); }
+
+  /* Numeric is mono in BOTH directions and always Western digits.
+     Prices, IBANs, SWIFT codes, transfer references and timers must never
+     mirror or localise. */
+  .t-numeric-lg  { font: var(--weight-medium) var(--text-xl)/var(--lh-xl) var(--font-mono); direction: ltr; unicode-bidi: isolate; }
+  .t-numeric-md  { font: var(--weight-regular) var(--text-sm)/var(--lh-sm) var(--font-mono); direction: ltr; unicode-bidi: isolate; }
+  .t-numeric-sm  { font: var(--weight-regular) var(--text-xs)/var(--lh-xs) var(--font-mono); direction: ltr; unicode-bidi: isolate; }
+}
+
+/* ---------------------------------------------------------------------------
+   6. BASE
+   ------------------------------------------------------------------------ */
+
+@layer base {
+  html { color-scheme: light; }
+  .dark, [data-theme="dark"] { color-scheme: dark; }
+
+  body {
+    background: var(--bg-canvas);
+    color: var(--fg-primary);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* One focus treatment, everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--stroke-focus);
+    outline-offset: 1px;
+    box-shadow: var(--elev-focus);
+  }
+
+  ::selection { background: var(--bg-brand-subtle); color: var(--fg-brand); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 1ms !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
