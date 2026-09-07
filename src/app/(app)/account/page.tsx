@@ -1,14 +1,10 @@
-import { cookies } from "next/headers";
-
 import { Field } from "@/components/lisaan/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { EMAIL_COOKIE, NAME_COOKIE } from "@/lib/session";
+import { verifyStudentSession } from "@/lib/dal";
 
 export default async function AccountPage() {
-  const cookieStore = await cookies();
-  const name = cookieStore.get(NAME_COOKIE)?.value ?? "Student";
-  const email = cookieStore.get(EMAIL_COOKIE)?.value ?? "student@example.com";
+  const { name, email } = await verifyStudentSession();
 
   return (
     <div className="flex max-w-md flex-col gap-6">

@@ -12,7 +12,8 @@ import { LanguageSwitcher } from "@/components/lisaan/language-switcher";
 import { IconButton } from "@/components/lisaan/icon-button";
 import { Avatar } from "@/components/ui/avatar";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/locale";
-import { EMAIL_COOKIE, NAME_COOKIE } from "@/lib/session";
+import { verifyStudentSession } from "@/lib/dal";
+import { signOutStudent } from "@/app/(auth)/actions";
 
 const NAV: AppNavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "home" },
@@ -27,8 +28,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
   const locale = isLocale(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
-  const name = cookieStore.get(NAME_COOKIE)?.value ?? "Student";
-  const email = cookieStore.get(EMAIL_COOKIE)?.value ?? "student@example.com";
+  const session = await verifyStudentSession();
+  const { name, email } = session;
 
   return (
     <div className="flex min-h-screen">
@@ -56,7 +57,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <IconButton aria-label="Notifications" variant="ghost">
               <Bell aria-hidden />
             </IconButton>
-            <AccountMenu name={name} email={email} locale={locale} />
+            <AccountMenu name={name} email={email} locale={locale} signOutAction={signOutStudent} />
           </div>
         </div>
 
@@ -64,7 +65,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <SiteHeader
             locale={locale}
             links={NAV.map(({ href, label }) => ({ href, label }))}
-            trailing={<AccountMenu name={name} email={email} locale={locale} />}
+            trailing={<AccountMenu name={name} email={email} locale={locale} signOutAction={signOutStudent} />}
           />
         </div>
 

@@ -9,6 +9,7 @@ import { z } from "zod";
 import { Field } from "@/components/lisaan/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { requestPasswordReset } from "../actions";
 
 const schema = z.object({ email: z.string().email("Enter a valid email address.") });
 type FormValues = z.infer<typeof schema>;
@@ -17,8 +18,8 @@ export default function ForgotPasswordPage() {
   const router = useRouter();
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { email: "" } });
 
-  async function onSubmit() {
-    await new Promise((resolve) => setTimeout(resolve, 400));
+  async function onSubmit(values: FormValues) {
+    await requestPasswordReset(values.email);
     // Always the same destination, whether or not the address exists.
     router.push("/forgot-password/sent");
   }

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { OnboardingStepBar } from "@/components/lisaan/onboarding-step-bar";
 import { cn } from "@/lib/utils";
 import { getOnboardingAnswers, setOnboardingAnswers } from "@/lib/onboarding-store";
-import { ONBOARDING_STEP_COOKIE, setDemoCookie } from "@/lib/session";
+import { setOnboardingStep } from "@/app/(auth)/actions";
 
 const GOALS = [
   { value: "work", title: "Work", description: "Emails, calls, and meetings in English." },
@@ -28,9 +28,9 @@ export default function OnboardingGoalPage() {
     );
   }
 
-  function next() {
+  async function next() {
     setOnboardingAnswers({ goals });
-    setDemoCookie(ONBOARDING_STEP_COOKIE, "pace");
+    await setOnboardingStep("pace");
     router.push("/onboarding/pace");
   }
 

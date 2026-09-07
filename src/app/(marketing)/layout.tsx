@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { SiteHeader } from "@/components/lisaan/site-header";
 import { Logo } from "@/components/lisaan/logo";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/locale";
-import { SESSION_COOKIE } from "@/lib/session";
+import { STUDENT_COOKIE } from "@/lib/session";
 
 const LINKS = [
   { label: "Courses", href: "/#courses" },
@@ -16,7 +16,7 @@ export default async function MarketingLayout({ children }: { children: ReactNod
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
   const locale = isLocale(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
-  const signedIn = cookieStore.has(SESSION_COOKIE);
+  const signedIn = cookieStore.has(STUDENT_COOKIE);
 
   return (
     <div className="flex min-h-screen flex-col">

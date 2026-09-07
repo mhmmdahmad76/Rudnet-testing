@@ -19,8 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EMAIL_COOKIE, NAME_COOKIE, SESSION_COOKIE, setDemoCookie } from "@/lib/session";
 import { COUNTRIES } from "@/lib/countries";
+import { signUp } from "../actions";
 
 const schema = z.object({
   name: z.string().min(1, "Enter your name."),
@@ -50,16 +50,13 @@ export default function SignUpPage() {
 
   async function onSubmit(values: FormValues) {
     setEmailTaken(false);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const result = await signUp(values);
 
-    if (values.email === "taken@example.com") {
+    if (!result.ok) {
       setEmailTaken(true);
       return;
     }
 
-    setDemoCookie(SESSION_COOKIE, "1");
-    setDemoCookie(NAME_COOKIE, values.name);
-    setDemoCookie(EMAIL_COOKIE, values.email);
     router.push("/verify-email");
     router.refresh();
   }

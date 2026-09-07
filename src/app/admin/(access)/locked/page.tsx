@@ -1,41 +1,22 @@
-"use client";
+import { db } from "@/lib/db";
+import { getAdminClaims } from "@/lib/session";
+import { LockedCountdown } from "./locked-countdown";
 
-import * as React from "react";
+function secondsUntil(iso: string): number {
+  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 1000));
+}
 
-import { Alert } from "@/components/ui/alert";
+export default async function AdminLockedPage() {
+  const claims = await getAdminClaims();
+  let seconds = 15 * 60;
 
-const COOLDOWN_SECONDS = 15 * 60;
+  if (claims) {
+    const rows = await db().sql`SELECT locked_until FROM admin_users WHERE id = ${claims.adminId}`;
+    const row = rows[0] as { locked_until: string | null } | undefined;
+    if (row?.locked_until) {
+      seconds = secondsUntil(row.locked_until);
+    }
+  }
 
-export default function AdminLockedPage() {
-  const [seconds, setSeconds] = React.useState(COOLDOWN_SECONDS);
-
-  React.useEffect(() => {
-    if (seconds <= 0) return;
-    const timer = setTimeout(() => setSeconds((s) => s - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [seconds]);
-
-  const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
-  const secs = String(seconds % 60).padStart(2, "0");
-
-  return (
-    <div className="flex flex-col items-center gap-6 text-center">
-      <div className="flex flex-col gap-2">
-        <h1 className="t-h2 text-fg-primary">This account is locked</h1>
-        <p className="t-body-sm text-fg-secondary">
-          Too many failed attempts. For security, sign-in is paused for a while.
-        </p>
-      </div>
-
-      <p className="t-numeric-lg text-fg-primary">
-        {seconds > 0 ? `${minutes}:${secs}` : "You can try again now"}
-      </p>
-
-      <Alert
-        tone="info"
-        title="Wasn't you?"
-        body="If you didn't try to sign in, your credentials may be compromised — change your password once you're back in, and check the audit log for anything unfamiliar."
-      />
-    </div>
-  );
+  return <LockedCountdown initialSeconds={seconds} />;
 }

@@ -12,7 +12,7 @@ import { OnboardingStepBar } from "@/components/lisaan/onboarding-step-bar";
 import { IconButton } from "@/components/lisaan/icon-button";
 import { DEMO_PLANS } from "@/lib/demo-data";
 import { getOnboardingAnswers, setOnboardingAnswers } from "@/lib/onboarding-store";
-import { ONBOARDING_STEP_COOKIE, setDemoCookie } from "@/lib/session";
+import { setOnboardingStep } from "@/app/(auth)/actions";
 
 const TRANSFER_DETAILS = {
   iban: "AE07 0331 2345 6789 0123 456",
@@ -132,11 +132,11 @@ export default function OnboardingTransferPage() {
       <Button
         className="mt-8 w-full"
         disabled={upload.kind !== "success"}
-        onClick={() => {
+        onClick={async () => {
           // The free lessons open immediately — the student is never left
           // with nothing to do while a human checks the receipt.
           setOnboardingAnswers({ paymentMethod: "transfer" });
-          setDemoCookie(ONBOARDING_STEP_COOKIE, "done");
+          await setOnboardingStep("done");
           router.push("/onboarding/transfer/pending");
         }}
       >

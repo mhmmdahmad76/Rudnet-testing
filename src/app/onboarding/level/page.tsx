@@ -8,7 +8,7 @@ import { ChoiceCard } from "@/components/lisaan/choice-card";
 import { Button } from "@/components/ui/button";
 import { OnboardingStepBar } from "@/components/lisaan/onboarding-step-bar";
 import { getOnboardingAnswers, setOnboardingAnswers } from "@/lib/onboarding-store";
-import { ONBOARDING_STEP_COOKIE, setDemoCookie } from "@/lib/session";
+import { setOnboardingStep } from "@/app/(auth)/actions";
 
 const LEVELS = [
   { value: "A1", title: "Beginner", description: "I know a few words and phrases." },
@@ -22,9 +22,9 @@ export default function OnboardingLevelPage() {
   const router = useRouter();
   const [level, setLevel] = React.useState(() => getOnboardingAnswers().level ?? "");
 
-  function goTo(nextLevel: string) {
+  async function goTo(nextLevel: string) {
     setOnboardingAnswers({ level: nextLevel });
-    setDemoCookie(ONBOARDING_STEP_COOKIE, "goal");
+    await setOnboardingStep("goal");
     router.push("/onboarding/goal");
   }
 

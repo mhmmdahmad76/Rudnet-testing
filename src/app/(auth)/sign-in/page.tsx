@@ -12,14 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
-import {
-  EMAIL_COOKIE,
-  NAME_COOKIE,
-  ONBOARDING_STEP_COOKIE,
-  SESSION_COOKIE,
-  VERIFIED_COOKIE,
-  setDemoCookie,
-} from "@/lib/session";
+import { signIn } from "../actions";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email address."),
@@ -29,12 +22,6 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-/**
- * There's no backend, so specific inputs stand in for the account states
- * this screen has to handle: "locked@example.com" → locked out,
- * "suspended@example.com" → suspended, any other email with a password
- * that isn't "demo1234" → wrong password (three attempts, then locked).
- */
 type ScreenState = { kind: "form" } | { kind: "locked"; seconds: number } | { kind: "suspended" };
 
 export default function SignInPage() {
@@ -63,39 +50,44 @@ export default function SignInPage() {
 
   async function onSubmit(values: FormValues) {
     setWrongPassword(false);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const result = await signIn(values);
 
-    if (values.email === "suspended@example.com") {
-      setScreen({ kind: "suspended" });
-      return;
-    }
-    if (values.email === "locked@example.com") {
-      setScreen({ kind: "locked", seconds: 30 });
-      return;
-    }
-    if (values.email === "manydevices@example.com") {
-      setDemoCookie(SESSION_COOKIE, "1");
-      setDemoCookie(VERIFIED_COOKIE, "1");
-      setDemoCookie(NAME_COOKIE, "Student");
-      setDemoCookie(EMAIL_COOKIE, values.email);
-      router.push(`/devices?next=${encodeURIComponent(next)}`);
-      return;
-    }
-    if (values.password !== "demo1234") {
-      const remaining = attemptsLeft - 1;
-      setAttemptsLeft(remaining);
-      setWrongPassword(true);
-      if (remaining <= 0) {
-        setScreen({ kind: "locked", seconds: 30 });
+    if (!result.ok) {
+      if (result.kind === "suspended") {
+        setScreen({ kind: "suspended" });
+        return;
       }
+      if (result.kind === "locked") {
+        setScreen({ kind: "locked", seconds: result.seconds });
+        return;
+      }
+      if (result.kind === "device-limit") {
+        router.push(`/devices?next=${encodeURIComponent(next)}`);
+        return;
+      }
+      if (result.kind === "wrong-password") {
+        setAttemptsLeft(result.attemptsLeft);
+        setWrongPassword(true);
+        return;
+      }
+      // "invalid" — an address that doesn't exist reads the same as a
+      // wrong password, so as not to reveal which addresses are registered.
+      setAttemptsLeft((n) => Math.max(0, n - 1));
+      setWrongPassword(true);
       return;
     }
 
-    setDemoCookie(SESSION_COOKIE, "1", values.remember ? 30 : 1);
-    setDemoCookie(VERIFIED_COOKIE, "1");
-    setDemoCookie(NAME_COOKIE, values.email.split("@")[0]!.replace(/\W+/g, " ") || "Student");
-    setDemoCookie(EMAIL_COOKIE, values.email);
-    setDemoCookie(ONBOARDING_STEP_COOKIE, "done");
+    if (!result.emailVerified) {
+      router.push("/verify-email");
+      router.refresh();
+      return;
+    }
+    if (result.onboardingStep !== "done") {
+      router.push(`/onboarding/${result.onboardingStep}`);
+      router.refresh();
+      return;
+    }
+
     router.push(next);
     router.refresh();
   }
@@ -112,7 +104,7 @@ export default function SignInPage() {
         <Alert
           tone="danger"
           title="Try again shortly"
-          body={`You can try again in ${screen.seconds}s, or reset your password now.`}
+          body={`You can try again in ${Math.ceil(screen.seconds / 60)} minute${Math.ceil(screen.seconds / 60) === 1 ? "" : "s"}, or reset your password now.`}
         />
         <Button asChild variant="secondary">
           <Link href="/forgot-password">Reset your password</Link>

@@ -4,12 +4,12 @@ import { Compass } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { IconChip } from "@/components/lisaan/icon-chip";
-import { SESSION_COOKIE } from "@/lib/session";
+import { STUDENT_COOKIE } from "@/lib/session";
 
 /** Plain explanation + the three most likely destinations. */
 export default async function NotFound() {
   const cookieStore = await cookies();
-  const signedIn = cookieStore.has(SESSION_COOKIE);
+  const signedIn = cookieStore.has(STUDENT_COOKIE);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg-canvas p-8 text-center">

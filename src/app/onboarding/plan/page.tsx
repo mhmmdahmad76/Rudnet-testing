@@ -12,7 +12,7 @@ import { Alert } from "@/components/ui/alert";
 import { OnboardingStepBar } from "@/components/lisaan/onboarding-step-bar";
 import { DEMO_PLANS } from "@/lib/demo-data";
 import { getOnboardingAnswers, setOnboardingAnswers } from "@/lib/onboarding-store";
-import { ONBOARDING_STEP_COOKIE, setDemoCookie } from "@/lib/session";
+import { setOnboardingStep } from "@/app/(auth)/actions";
 
 const VAT_PCT = 5;
 
@@ -37,9 +37,9 @@ export default function OnboardingPlanPage() {
     setOnboardingAnswers({ plan: value as "monthly" | "annual" });
   }
 
-  function payByTransfer() {
+  async function payByTransfer() {
     setOnboardingAnswers({ paymentMethod: "transfer" });
-    setDemoCookie(ONBOARDING_STEP_COOKIE, "plan");
+    await setOnboardingStep("plan");
     router.push("/onboarding/transfer");
   }
 
@@ -57,7 +57,7 @@ export default function OnboardingPlanPage() {
     }
 
     setOnboardingAnswers({ paymentMethod: "card" });
-    setDemoCookie(ONBOARDING_STEP_COOKIE, "done");
+    await setOnboardingStep("done");
     router.push("/onboarding/ready");
   }
 

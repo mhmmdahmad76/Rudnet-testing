@@ -15,12 +15,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LanguageSwitcher } from "@/components/lisaan/language-switcher";
 import type { Locale } from "@/lib/locale";
-import {
-  ONBOARDING_STEP_COOKIE,
-  SESSION_COOKIE,
-  VERIFIED_COOKIE,
-  clearDemoCookie,
-} from "@/lib/session";
 
 export interface AccountMenuProps {
   name: string;
@@ -29,6 +23,9 @@ export interface AccountMenuProps {
   accountHref?: string;
   billingHref?: string;
   signOutRedirect?: string;
+  /** Server Action that actually destroys the session — student and admin
+   * portals each pass their own, so sign-out clears the right cookie. */
+  signOutAction: () => Promise<unknown>;
 }
 
 /** Avatar click → Account · Billing · Language · Sign out. */
@@ -39,13 +36,12 @@ function AccountMenu({
   accountHref = "/account",
   billingHref = "/billing",
   signOutRedirect = "/",
+  signOutAction,
 }: AccountMenuProps) {
   const router = useRouter();
 
-  function signOut() {
-    clearDemoCookie(SESSION_COOKIE);
-    clearDemoCookie(VERIFIED_COOKIE);
-    clearDemoCookie(ONBOARDING_STEP_COOKIE);
+  async function signOut() {
+    await signOutAction();
     router.push(signOutRedirect);
     router.refresh();
   }

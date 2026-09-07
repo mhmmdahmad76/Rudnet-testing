@@ -10,7 +10,7 @@ import { Field } from "@/components/lisaan/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
-import { ADMIN_SESSION_COOKIE, setDemoCookie } from "@/lib/session";
+import { adminSignIn } from "../actions";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email address."),
@@ -18,7 +18,7 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 
-// Demo credential: admin@lisaan.app / admin1234
+// Bootstrap credential (seeded by the init_auth migration): admin@lisaan.app / admin1234
 export default function AdminSignInPage() {
   const router = useRouter();
   const [rejected, setRejected] = React.useState(false);
@@ -31,16 +31,19 @@ export default function AdminSignInPage() {
 
   async function onSubmit(values: FormValues) {
     setRejected(false);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const result = await adminSignIn(values);
 
-    if (values.email !== "admin@lisaan.app" || values.password !== "admin1234") {
-      setAttemptsLeft((n) => Math.max(0, n - 1));
+    if (!result.ok) {
+      if (result.kind === "locked") {
+        router.push("/admin/locked");
+        return;
+      }
+      setAttemptsLeft(result.attemptsLeft ?? Math.max(0, attemptsLeft - 1));
       setRejected(true);
       return;
     }
 
-    setDemoCookie(ADMIN_SESSION_COOKIE, "1");
-    router.push("/admin/2fa");
+    router.push(result.needsSetup ? "/admin/2fa/setup" : "/admin/2fa");
   }
 
   return (

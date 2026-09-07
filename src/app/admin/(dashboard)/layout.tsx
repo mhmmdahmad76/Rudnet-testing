@@ -10,6 +10,8 @@ import { AccountMenu } from "@/components/lisaan/account-menu";
 import { LanguageSwitcher } from "@/components/lisaan/language-switcher";
 import { IconButton } from "@/components/lisaan/icon-button";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/locale";
+import { verifyAdminSession } from "@/lib/dal";
+import { adminSignOut } from "@/app/admin/(access)/actions";
 
 const NAV: AppNavItem[] = [
   { href: "/admin", label: "Overview", icon: "overview" },
@@ -25,6 +27,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
   const locale = isLocale(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
+  const session = await verifyAdminSession();
 
   return (
     <div className="flex min-h-screen">
@@ -51,11 +54,12 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
           </IconButton>
           <AccountMenu
             name="Owner"
-            email="owner@lisaan.app"
+            email={session.email}
             locale={locale}
             accountHref="/admin/settings"
             billingHref="/admin/pricing"
             signOutRedirect="/admin/sign-in"
+            signOutAction={adminSignOut}
           />
         </div>
 
@@ -66,11 +70,12 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             trailing={
               <AccountMenu
                 name="Owner"
-                email="owner@lisaan.app"
+                email={session.email}
                 locale={locale}
                 accountHref="/admin/settings"
                 billingHref="/admin/pricing"
                 signOutRedirect="/admin/sign-in"
+                signOutAction={adminSignOut}
               />
             }
           />

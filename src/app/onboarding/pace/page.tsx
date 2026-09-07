@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { OnboardingStepBar } from "@/components/lisaan/onboarding-step-bar";
 import { getOnboardingAnswers, setOnboardingAnswers } from "@/lib/onboarding-store";
-import { ONBOARDING_STEP_COOKIE, setDemoCookie } from "@/lib/session";
+import { setOnboardingStep } from "@/app/(auth)/actions";
 
 const PACES = [
   {
@@ -34,9 +34,9 @@ export default function OnboardingPacePage() {
   const [pace, setPace] = React.useState<string>(() => getOnboardingAnswers().pace ?? "4");
   const [reminders, setReminders] = React.useState(() => getOnboardingAnswers().reminders ?? true);
 
-  function next() {
+  async function next() {
     setOnboardingAnswers({ pace: pace as "2" | "4" | "6", reminders });
-    setDemoCookie(ONBOARDING_STEP_COOKIE, "plan");
+    await setOnboardingStep("plan");
     router.push("/onboarding/plan");
   }
 

@@ -10,6 +10,7 @@ import { Field } from "@/components/lisaan/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PasswordChecklist } from "@/components/lisaan/password-checklist";
+import { resetPassword } from "../actions";
 
 const schema = z
   .object({
@@ -41,8 +42,13 @@ export default function ResetPasswordPage() {
 
   const password = form.watch("password");
 
-  async function onSubmit() {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+  async function onSubmit(values: FormValues) {
+    if (!token) return;
+    const result = await resetPassword(token, values.password);
+    if (!result.ok) {
+      router.push("/reset-password/expired");
+      return;
+    }
     router.push("/reset-password/done");
   }
 

@@ -4,7 +4,7 @@ import { Award, BookOpen, Target } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { IconChip } from "@/components/lisaan/icon-chip";
-import { SESSION_COOKIE } from "@/lib/session";
+import { STUDENT_COOKIE } from "@/lib/session";
 import { DEMO_PLANS } from "@/lib/demo-data";
 import { LandingCourses } from "./landing-courses";
 
@@ -28,7 +28,7 @@ const HOW_IT_WORKS = [
 
 export default async function LandingPage() {
   const cookieStore = await cookies();
-  const signedIn = cookieStore.has(SESSION_COOKIE);
+  const signedIn = cookieStore.has(STUDENT_COOKIE);
 
   return (
     <div className="flex flex-col">

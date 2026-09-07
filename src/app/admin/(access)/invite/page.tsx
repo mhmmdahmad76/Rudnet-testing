@@ -8,38 +8,57 @@ import { Field } from "@/components/lisaan/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PasswordChecklist } from "@/components/lisaan/password-checklist";
-import { ADMIN_SESSION_COOKIE, setDemoCookie } from "@/lib/session";
+import { acceptAdminInvite, getInviteEmail } from "../actions";
+
+function ExpiredInvite() {
+  return (
+    <div className="flex flex-col items-center gap-4 text-center">
+      <h1 className="t-h2 text-fg-primary">This invitation has expired</h1>
+      <p className="t-body-sm max-w-sm text-fg-secondary">
+        Instructor invitations last 7 days and are bound to one address. Ask whoever sent it to send
+        a new one.
+      </p>
+      <Button onClick={() => toast("A new invitation was requested")}>Request a new invitation</Button>
+    </div>
+  );
+}
 
 export default function AdminInvitePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const invitedEmail = "owner@lisaan.app";
+  const hasToken = Boolean(token) && token !== "expired";
 
   const [password, setPassword] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
+  const [invalid, setInvalid] = React.useState(false);
+  const [email, setEmail] = React.useState<string | null>(null);
+  const [checked, setChecked] = React.useState(false);
 
-  if (!token || token === "expired") {
-    return (
-      <div className="flex flex-col items-center gap-4 text-center">
-        <h1 className="t-h2 text-fg-primary">This invitation has expired</h1>
-        <p className="t-body-sm max-w-sm text-fg-secondary">
-          Instructor invitations last 7 days and are bound to one address. Ask whoever sent it to
-          send a new one.
-        </p>
-        <Button onClick={() => toast("A new invitation was requested")}>
-          Request a new invitation
-        </Button>
-      </div>
-    );
-  }
+  React.useEffect(() => {
+    if (!hasToken) return;
+    getInviteEmail(token!).then((result) => {
+      if (result.ok) setEmail(result.email);
+      else setInvalid(true);
+      setChecked(true);
+    });
+  }, [hasToken, token]);
+
+  if (!hasToken) return <ExpiredInvite />;
+  if (!checked) return null;
+  if (invalid) return <ExpiredInvite />;
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setDemoCookie(ADMIN_SESSION_COOKIE, "1");
-    router.push("/admin/2fa");
+    const result = await acceptAdminInvite(token!, password);
+    setSubmitting(false);
+
+    if (!result.ok) {
+      setInvalid(true);
+      return;
+    }
+    router.push("/admin/2fa/setup");
   }
 
   return (
@@ -54,7 +73,7 @@ export default function AdminInvitePage() {
 
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <Field label="Email">
-          <Input value={invitedEmail} disabled readOnly />
+          <Input value={email ?? ""} disabled readOnly />
         </Field>
         <Field label="Create a password">
           <Input
