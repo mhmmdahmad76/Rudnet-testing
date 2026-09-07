@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,12 +84,12 @@ export function TwoFactorSetupForm({ secret, qrDataUrl }: { secret: string; qrDa
       </div>
 
       <div className="flex flex-col items-center gap-3">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element -- a data: URI QR code gains nothing from next/image's optimizer */}
+        <img
           src={qrDataUrl}
           alt="Scan this QR code with your authenticator app"
           width={200}
           height={200}
-          unoptimized
           className="rounded-lg border border-stroke-default"
         />
         <p className="t-body-xs text-fg-tertiary">Or enter this key manually:</p>
