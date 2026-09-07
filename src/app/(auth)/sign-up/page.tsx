@@ -20,15 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EMAIL_COOKIE, NAME_COOKIE, SESSION_COOKIE, setDemoCookie } from "@/lib/session";
-
-const COUNTRIES = [
-  { value: "ae", label: "United Arab Emirates" },
-  { value: "sa", label: "Saudi Arabia" },
-  { value: "kw", label: "Kuwait" },
-  { value: "qa", label: "Qatar" },
-  { value: "bh", label: "Bahrain" },
-  { value: "om", label: "Oman" },
-];
+import { COUNTRIES } from "@/lib/countries";
 
 const schema = z.object({
   name: z.string().min(1, "Enter your name."),

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -35,6 +35,34 @@ const SelectTrigger = React.forwardRef<
 ));
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
+const SelectScrollUpButton = React.forwardRef<
+  React.ComponentRef<typeof SelectPrimitive.ScrollUpButton>,
+  React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollUpButton
+    ref={ref}
+    className={cn("flex items-center justify-center py-1 text-fg-tertiary", className)}
+    {...props}
+  >
+    <ChevronUp className="size-4" aria-hidden />
+  </SelectPrimitive.ScrollUpButton>
+));
+SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
+
+const SelectScrollDownButton = React.forwardRef<
+  React.ComponentRef<typeof SelectPrimitive.ScrollDownButton>,
+  React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollDownButton
+    ref={ref}
+    className={cn("flex items-center justify-center py-1 text-fg-tertiary", className)}
+    {...props}
+  >
+    <ChevronDown className="size-4" aria-hidden />
+  </SelectPrimitive.ScrollDownButton>
+));
+SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName;
+
 const SelectContent = React.forwardRef<
   React.ComponentRef<typeof SelectPrimitive.Content>,
   React.ComponentProps<typeof SelectPrimitive.Content>
@@ -51,14 +79,16 @@ const SelectContent = React.forwardRef<
       )}
       {...props}
     >
+      <SelectScrollUpButton />
       <SelectPrimitive.Viewport
         className={cn(
-          "p-1",
+          "max-h-80 overflow-y-auto p-1",
           position === "popper" && "w-full min-w-(--radix-select-trigger-width)",
         )}
       >
         {children}
       </SelectPrimitive.Viewport>
+      <SelectScrollDownButton />
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ));
@@ -121,4 +151,6 @@ export {
   SelectLabel,
   SelectItem,
   SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
 };

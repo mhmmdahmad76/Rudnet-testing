@@ -88,6 +88,10 @@ export default function AdminTwoFactorPage() {
       <div className="flex flex-col gap-2">
         <h1 className="t-h2 text-fg-primary">Two-factor authentication</h1>
         <p className="t-body-sm text-fg-secondary">Enter the 6-digit code from your authenticator app.</p>
+        <p className="t-body-xs text-fg-tertiary">
+          Demo build — there&rsquo;s no real authenticator app. Enter{" "}
+          <strong className="text-fg-secondary">123456</strong> to continue.
+        </p>
       </div>
 
       <CodeInput length={6} value={code} onChange={setCode} onComplete={handleComplete} error={error} />

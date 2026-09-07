@@ -52,6 +52,10 @@ export default function VerifyEmailPage() {
         <p className="t-body-sm text-fg-secondary">
           We sent a 6-digit code to {email ? <strong className="text-fg-primary">{email}</strong> : "your email"}.
         </p>
+        <p className="t-body-xs text-fg-tertiary">
+          This is a demo build with no real email backend — nothing was actually sent. Enter{" "}
+          <strong className="text-fg-secondary">123456</strong> to continue.
+        </p>
       </div>
 
       <CodeInput length={6} value={code} onChange={setCode} onComplete={handleComplete} error={error} />
