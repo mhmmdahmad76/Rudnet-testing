@@ -14,12 +14,19 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { DEMO_COURSE, flattenItems } from "@/lib/demo-data";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/locale";
+import { getDictionary } from "@/lib/i18n";
+
+export interface AppSearchProps {
+  locale?: Locale;
+}
 
 /** Search focus opens a command palette over lessons and resources. */
-function AppSearch() {
+function AppSearch({ locale = DEFAULT_LOCALE }: AppSearchProps) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const items = flattenItems();
+  const t = getDictionary(locale);
 
   return (
     <>
@@ -29,14 +36,14 @@ function AppSearch() {
           aria-hidden
         />
         <Input
-          placeholder="Search lessons, resources…"
+          placeholder={t.search.placeholder}
           className="ps-9"
           readOnly
           onFocus={() => setOpen(true)}
         />
       </div>
       <CommandDialog open={open} onOpenChange={setOpen} title="Search">
-        <CommandInput placeholder="Search lessons, resources…" />
+        <CommandInput placeholder={t.search.placeholder} />
         <CommandList>
           <CommandEmpty>No results.</CommandEmpty>
           <CommandGroup heading="Lessons and quizzes">

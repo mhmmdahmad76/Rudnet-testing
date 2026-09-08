@@ -20,6 +20,33 @@ export interface StudentSession {
   email: string;
   emailVerified: boolean;
   onboardingStep: string;
+  level: string | null;
+  levelSource: "self" | "test" | null;
+  planStatus: "free" | "premium";
+}
+
+interface StudentRow {
+  name: string;
+  email: string;
+  email_verified: boolean;
+  onboarding_step: string;
+  suspended: boolean;
+  level: string | null;
+  level_source: "self" | "test" | null;
+  plan_status: "free" | "premium";
+}
+
+function toStudentSession(studentId: number, row: StudentRow): StudentSession {
+  return {
+    studentId,
+    name: row.name,
+    email: row.email,
+    emailVerified: row.email_verified,
+    onboardingStep: row.onboarding_step,
+    level: row.level,
+    levelSource: row.level_source,
+    planStatus: row.plan_status,
+  };
 }
 
 export const verifyStudentSession = cache(async (): Promise<StudentSession> => {
@@ -27,26 +54,19 @@ export const verifyStudentSession = cache(async (): Promise<StudentSession> => {
   if (!claims) redirect("/sign-in");
 
   const rows = await db().sql`
-    SELECT s.name, s.email, s.email_verified, s.onboarding_step, s.suspended
+    SELECT s.name, s.email, s.email_verified, s.onboarding_step, s.suspended,
+           s.level, s.level_source, s.plan_status
     FROM sessions sess
     JOIN students s ON s.id = sess.subject_id
     WHERE sess.id = ${claims.sid} AND sess.kind = 'student' AND sess.expires_at > NOW()
   `;
-  const row = rows[0] as
-    | { name: string; email: string; email_verified: boolean; onboarding_step: string; suspended: boolean }
-    | undefined;
+  const row = rows[0] as StudentRow | undefined;
   if (!row) redirect("/sign-in");
   if (row.suspended) redirect("/sign-in");
 
   void db().sql`UPDATE sessions SET last_used_at = NOW() WHERE id = ${claims.sid}`;
 
-  return {
-    studentId: claims.studentId,
-    name: row.name,
-    email: row.email,
-    emailVerified: row.email_verified,
-    onboardingStep: row.onboarding_step,
-  };
+  return toStudentSession(claims.studentId, row);
 });
 
 /** Like verifyStudentSession, but returns null instead of redirecting — for
@@ -56,22 +76,15 @@ export const getOptionalStudentSession = cache(async (): Promise<StudentSession 
   const claims = await getStudentClaims();
   if (!claims) return null;
   const rows = await db().sql`
-    SELECT s.name, s.email, s.email_verified, s.onboarding_step, s.suspended
+    SELECT s.name, s.email, s.email_verified, s.onboarding_step, s.suspended,
+           s.level, s.level_source, s.plan_status
     FROM sessions sess
     JOIN students s ON s.id = sess.subject_id
     WHERE sess.id = ${claims.sid} AND sess.kind = 'student' AND sess.expires_at > NOW()
   `;
-  const row = rows[0] as
-    | { name: string; email: string; email_verified: boolean; onboarding_step: string; suspended: boolean }
-    | undefined;
+  const row = rows[0] as StudentRow | undefined;
   if (!row || row.suspended) return null;
-  return {
-    studentId: claims.studentId,
-    name: row.name,
-    email: row.email,
-    emailVerified: row.email_verified,
-    onboardingStep: row.onboarding_step,
-  };
+  return toStudentSession(claims.studentId, row);
 });
 
 export interface AdminSession {

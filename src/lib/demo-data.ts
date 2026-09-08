@@ -59,6 +59,10 @@ export interface DemoCourse {
   units: DemoUnit[];
 }
 
+/** The one unit a free-plan student can access in full — everything past
+ * it requires a premium plan. See students.plan_status. */
+export const FREE_PREVIEW_UNIT_ID = "unit-1";
+
 export const DEMO_COURSE: DemoCourse = {
   slug: "business-english",
   title: "Business English Essentials",

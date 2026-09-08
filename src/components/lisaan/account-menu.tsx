@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LanguageSwitcher } from "@/components/lisaan/language-switcher";
 import type { Locale } from "@/lib/locale";
+import { getDictionary } from "@/lib/i18n";
 
 export interface AccountMenuProps {
   name: string;
@@ -39,6 +40,7 @@ function AccountMenu({
   signOutAction,
 }: AccountMenuProps) {
   const router = useRouter();
+  const t = getDictionary(locale);
 
   async function signOut() {
     await signOutAction();
@@ -61,22 +63,22 @@ function AccountMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href={accountHref}>
-            <User className="size-4" aria-hidden /> Account
+            <User className="size-4" aria-hidden /> {t.accountMenu.account}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href={billingHref}>
-            <CreditCard className="size-4" aria-hidden /> Billing
+            <CreditCard className="size-4" aria-hidden /> {t.accountMenu.billing}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <div className="flex items-center justify-between px-2 py-1.5">
-          <span className="t-body-sm text-fg-secondary">Language</span>
+          <span className="t-body-sm text-fg-secondary">{t.accountMenu.language}</span>
           <LanguageSwitcher locale={locale} />
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="danger" onClick={signOut}>
-          <LogOut className="size-4" aria-hidden /> Sign out
+          <LogOut className="size-4" aria-hidden /> {t.accountMenu.signOut}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

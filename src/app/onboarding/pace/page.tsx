@@ -33,8 +33,10 @@ export default function OnboardingPacePage() {
   const router = useRouter();
   const [pace, setPace] = React.useState<string>(() => getOnboardingAnswers().pace ?? "4");
   const [reminders, setReminders] = React.useState(() => getOnboardingAnswers().reminders ?? true);
+  const [pending, setPending] = React.useState(false);
 
   async function next() {
+    setPending(true);
     setOnboardingAnswers({ pace: pace as "2" | "4" | "6", reminders });
     await setOnboardingStep("plan");
     router.push("/onboarding/plan");
@@ -42,13 +44,13 @@ export default function OnboardingPacePage() {
 
   return (
     <div>
-      <OnboardingStepBar step={3} />
+      <OnboardingStepBar step={3} loading={pending} />
       <h1 className="t-h2 mb-2 text-fg-primary">How often can you study?</h1>
       <p className="t-body-sm mb-6 text-fg-secondary">
         Pick honestly — the projection below is real, not aspirational.
       </p>
 
-      <RadioGroup value={pace} onValueChange={setPace} className="gap-3">
+      <RadioGroup value={pace} onValueChange={setPace} disabled={pending} className="gap-3">
         {PACES.map((option) => (
           <ChoiceCard
             key={option.value}
@@ -65,10 +67,10 @@ export default function OnboardingPacePage() {
           <p className="t-label-md text-fg-primary">Study reminders</p>
           <p className="t-body-xs text-fg-tertiary">A nudge on the days you plan to study.</p>
         </div>
-        <Switch checked={reminders} onCheckedChange={setReminders} />
+        <Switch checked={reminders} onCheckedChange={setReminders} disabled={pending} />
       </div>
 
-      <Button className="mt-8 w-full" onClick={next}>
+      <Button className="mt-8 w-full" loading={pending} onClick={next}>
         Continue
       </Button>
     </div>

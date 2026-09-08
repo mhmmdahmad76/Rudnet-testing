@@ -520,6 +520,16 @@
 
   ::selection { background: var(--bg-brand-subtle); color: var(--fg-brand); }
 
+  /* Toggled by LanguageSwitcher while a locale change is refreshing the
+     server tree, so the direction/text swap doesn't flash. */
+  html.locale-transitioning body {
+    opacity: 0.4;
+    transition: opacity 150ms ease-out;
+  }
+  body {
+    transition: opacity 150ms ease-in;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 1ms !important;

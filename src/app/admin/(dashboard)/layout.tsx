@@ -7,7 +7,6 @@ import { Logo } from "@/components/lisaan/logo";
 import { AppNav, type AppNavItem } from "@/components/lisaan/app-nav";
 import { SiteHeader } from "@/components/lisaan/site-header";
 import { AccountMenu } from "@/components/lisaan/account-menu";
-import { LanguageSwitcher } from "@/components/lisaan/language-switcher";
 import { IconButton } from "@/components/lisaan/icon-button";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/locale";
 import { verifyAdminSession } from "@/lib/dal";
@@ -48,7 +47,6 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="hidden h-16 items-center justify-end gap-2 border-b border-stroke-default bg-bg-surface px-6 lg:flex">
-          <LanguageSwitcher locale={locale} />
           <IconButton aria-label="Notifications" variant="ghost">
             <Bell aria-hidden />
           </IconButton>
@@ -78,6 +76,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
                 signOutAction={adminSignOut}
               />
             }
+            showLanguageSwitcher={false}
           />
         </div>
 

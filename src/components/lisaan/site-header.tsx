@@ -25,11 +25,21 @@ export interface SiteHeaderProps {
    * when this header is reused for the signed-in app shell's mobile nav. */
   trailing?: React.ReactNode;
   className?: string;
+  /** Suppress this header's own switcher when `trailing` already renders one
+   * (e.g. inside an account menu). Defaults to true. */
+  showLanguageSwitcher?: boolean;
 }
 
 /** Desktop shows the full nav inline; mobile collapses to a hamburger that
  * opens a sheet from the start edge. One component, responsive by CSS. */
-function SiteHeader({ locale, links, signedIn, trailing, className }: SiteHeaderProps) {
+function SiteHeader({
+  locale,
+  links,
+  signedIn,
+  trailing,
+  className,
+  showLanguageSwitcher = true,
+}: SiteHeaderProps) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -57,7 +67,7 @@ function SiteHeader({ locale, links, signedIn, trailing, className }: SiteHeader
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <LanguageSwitcher locale={locale} />
+          {showLanguageSwitcher && <LanguageSwitcher locale={locale} />}
           {trailing ?? (
             <Button asChild variant={signedIn ? "primary" : "secondary"} size="sm">
               <Link href={signedIn ? "/dashboard" : "/sign-in"}>
@@ -68,7 +78,7 @@ function SiteHeader({ locale, links, signedIn, trailing, className }: SiteHeader
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
-          <LanguageSwitcher locale={locale} />
+          {showLanguageSwitcher && <LanguageSwitcher locale={locale} />}
           {trailing}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>

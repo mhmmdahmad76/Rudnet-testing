@@ -21,6 +21,7 @@ const GOALS = [
 export default function OnboardingGoalPage() {
   const router = useRouter();
   const [goals, setGoals] = React.useState<string[]>(() => getOnboardingAnswers().goals ?? []);
+  const [pending, setPending] = React.useState(false);
 
   function toggle(value: string) {
     setGoals((current) =>
@@ -29,6 +30,7 @@ export default function OnboardingGoalPage() {
   }
 
   async function next() {
+    setPending(true);
     setOnboardingAnswers({ goals });
     await setOnboardingStep("pace");
     router.push("/onboarding/pace");
@@ -36,7 +38,7 @@ export default function OnboardingGoalPage() {
 
   return (
     <div>
-      <OnboardingStepBar step={2} />
+      <OnboardingStepBar step={2} loading={pending} />
       <h1 className="t-h2 mb-2 text-fg-primary">What are you working towards?</h1>
       <p className="t-body-sm mb-6 text-fg-secondary">Pick as many as apply.</p>
 
@@ -47,10 +49,11 @@ export default function OnboardingGoalPage() {
             <button
               key={goal.value}
               type="button"
+              disabled={pending}
               onClick={() => toggle(goal.value)}
               aria-pressed={selected}
               className={cn(
-                "flex w-full items-start gap-3 rounded-xl border p-4 text-start outline-none transition-colors focus-visible:shadow-(--elev-focus)",
+                "flex w-full items-start gap-3 rounded-xl border p-4 text-start outline-none transition-colors focus-visible:shadow-(--elev-focus) disabled:cursor-not-allowed disabled:opacity-60",
                 selected
                   ? "border-stroke-brand bg-bg-brand-subtle"
                   : "border-stroke-default bg-bg-surface hover:border-stroke-strong",
@@ -73,7 +76,7 @@ export default function OnboardingGoalPage() {
         })}
       </div>
 
-      <Button className="mt-8 w-full" disabled={goals.length === 0} onClick={next}>
+      <Button className="mt-8 w-full" disabled={goals.length === 0} loading={pending} onClick={next}>
         Continue
       </Button>
     </div>

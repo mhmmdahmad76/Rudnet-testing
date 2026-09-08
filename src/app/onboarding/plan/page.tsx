@@ -12,7 +12,7 @@ import { Alert } from "@/components/ui/alert";
 import { OnboardingStepBar } from "@/components/lisaan/onboarding-step-bar";
 import { DEMO_PLANS } from "@/lib/demo-data";
 import { getOnboardingAnswers, setOnboardingAnswers } from "@/lib/onboarding-store";
-import { setOnboardingStep } from "@/app/(auth)/actions";
+import { setOnboardingStep, setPlanStatus } from "@/app/(auth)/actions";
 
 const VAT_PCT = 5;
 
@@ -27,6 +27,8 @@ export default function OnboardingPlanPage() {
   const [cardNumber, setCardNumber] = React.useState("");
   const [processing, setProcessing] = React.useState(false);
   const [declined, setDeclined] = React.useState(false);
+  const [transferPending, setTransferPending] = React.useState(false);
+  const [skipping, setSkipping] = React.useState(false);
 
   const plan = DEMO_PLANS.find((p) => p.id === planId)!;
   const vat = Math.round(plan.price * (VAT_PCT / 100) * 100) / 100;
@@ -38,6 +40,7 @@ export default function OnboardingPlanPage() {
   }
 
   async function payByTransfer() {
+    setTransferPending(true);
     setOnboardingAnswers({ paymentMethod: "transfer" });
     await setOnboardingStep("plan");
     router.push("/onboarding/transfer");
@@ -48,22 +51,32 @@ export default function OnboardingPlanPage() {
     setDeclined(false);
     setProcessing(true);
     await new Promise((resolve) => setTimeout(resolve, 900));
-    setProcessing(false);
 
     // Test card 4000000000000002 simulates a decline, like Stripe's test suite.
     if (cardNumber.replace(/\s+/g, "") === "4000000000000002") {
+      setProcessing(false);
       setDeclined(true);
       return;
     }
 
     setOnboardingAnswers({ paymentMethod: "card" });
+    await setPlanStatus("premium");
     await setOnboardingStep("done");
     router.push("/onboarding/ready");
   }
 
+  async function skipPayment() {
+    setSkipping(true);
+    await setPlanStatus("free");
+    await setOnboardingStep("done");
+    router.push("/onboarding/ready");
+  }
+
+  const pending = processing || transferPending || skipping;
+
   return (
     <div>
-      <OnboardingStepBar step={4} />
+      <OnboardingStepBar step={4} loading={pending} />
       <h1 className="t-h2 mb-2 text-fg-primary">Choose your plan</h1>
       <p className="t-body-sm mb-6 text-fg-secondary">Cancel any time from account settings.</p>
 
@@ -105,8 +118,10 @@ export default function OnboardingPlanPage() {
 
       {!showCardForm ? (
         <div className="mt-8 flex flex-col gap-3">
-          <Button onClick={() => setShowCardForm(true)}>Pay by card</Button>
-          <Button variant="secondary" onClick={payByTransfer}>
+          <Button onClick={() => setShowCardForm(true)} disabled={pending}>
+            Pay by card
+          </Button>
+          <Button variant="secondary" loading={transferPending} disabled={pending} onClick={payByTransfer}>
             Pay by bank transfer
           </Button>
         </div>
@@ -118,17 +133,32 @@ export default function OnboardingPlanPage() {
               placeholder="4242 4242 4242 4242"
               value={cardNumber}
               onChange={(event) => setCardNumber(event.target.value)}
+              disabled={pending}
               required
             />
           </Field>
-          <Button type="submit" loading={processing}>
+          <Button type="submit" loading={processing} disabled={pending && !processing}>
             Pay ${total.toFixed(2)}
           </Button>
-          <Button type="button" variant="ghost" onClick={payByTransfer}>
+          <Button type="button" variant="ghost" disabled={pending} onClick={payByTransfer}>
             Pay by bank transfer instead
           </Button>
         </form>
       )}
+
+      <div className="mt-4 text-center">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={skipPayment}
+          className="t-label-sm text-fg-link hover:text-fg-link-hover disabled:opacity-50"
+        >
+          Continue with the free plan instead
+        </button>
+        <p className="t-body-xs mt-1 text-fg-tertiary">
+          Free access to preview lessons — upgrade any time from your dashboard.
+        </p>
+      </div>
     </div>
   );
 }

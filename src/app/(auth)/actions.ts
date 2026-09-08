@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { hashPassword, randomDigitCode, randomToken, sha256Hex, verifyHash, verifyPassword } from "@/lib/crypto";
 import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/email";
 import { verifyStudentSession } from "@/lib/dal";
+import { getPublicQuestions, scorePlacementTest } from "@/lib/placement-test";
 import {
   clearPendingStudentCookie,
   countActiveStudentSessions,
@@ -262,4 +263,41 @@ export async function setOnboardingStep(step: string) {
 export async function signOutStudent() {
   await destroyStudentSession();
   return { ok: true as const };
+}
+
+/** The onboarding level step's self-assessment — not test-confirmed, so
+ * the dashboard still offers the real placement test. */
+export async function setSelfReportedLevel(level: string | null) {
+  const session = await verifyStudentSession();
+  await db().sql`
+    UPDATE students SET level = ${level}, level_source = ${level ? "self" : null}
+    WHERE id = ${session.studentId}
+  `;
+  return { ok: true as const };
+}
+
+export async function setPlanStatus(status: "free" | "premium") {
+  const session = await verifyStudentSession();
+  await db().sql`UPDATE students SET plan_status = ${status} WHERE id = ${session.studentId}`;
+  return { ok: true as const };
+}
+
+export async function getPlacementQuestions() {
+  await verifyStudentSession();
+  return getPublicQuestions();
+}
+
+export async function submitPlacementTest(answers: Record<string, number>) {
+  const session = await verifyStudentSession();
+  const result = scorePlacementTest(answers);
+
+  await db().sql`
+    INSERT INTO placement_test_attempts (student_id, score, total, result_level, answers)
+    VALUES (${session.studentId}, ${result.score}, ${result.total}, ${result.level}, ${JSON.stringify(answers)})
+  `;
+  await db().sql`
+    UPDATE students SET level = ${result.level}, level_source = 'test' WHERE id = ${session.studentId}
+  `;
+
+  return { ok: true as const, ...result };
 }

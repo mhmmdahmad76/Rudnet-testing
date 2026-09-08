@@ -8,7 +8,7 @@ import {
   type StudentClaims,
 } from "@/lib/session-cookies";
 
-const STUDENT_PROTECTED_PREFIXES = ["/devices", "/onboarding", "/dashboard", "/courses"];
+const STUDENT_PROTECTED_PREFIXES = ["/devices", "/onboarding", "/dashboard", "/courses", "/placement-test"];
 const ADMIN_ACCESS_PATHS = ["/admin/sign-in", "/admin/2fa", "/admin/invite", "/admin/locked"];
 
 const secretKey = process.env.SESSION_SECRET;
@@ -77,6 +77,7 @@ export const config = {
     "/courses/:path*",
     "/devices",
     "/onboarding/:path*",
+    "/placement-test",
     "/admin/:path*",
   ],
 };

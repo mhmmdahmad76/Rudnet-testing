@@ -50,6 +50,7 @@ export default function OnboardingTransferPage() {
   const router = useRouter();
   const plan = DEMO_PLANS.find((p) => p.id === (getOnboardingAnswers().plan ?? "annual"))!;
   const [upload, setUpload] = React.useState<UploadState>({ kind: "empty" });
+  const [submitting, setSubmitting] = React.useState(false);
 
   function handleFiles(files: FileList) {
     const file = files[0];
@@ -83,7 +84,7 @@ export default function OnboardingTransferPage() {
 
   return (
     <div>
-      <OnboardingStepBar step={4} />
+      <OnboardingStepBar step={4} loading={submitting} />
       <h1 className="t-h2 mb-2 text-fg-primary">Pay by bank transfer</h1>
       <p className="t-body-sm mb-6 text-fg-secondary">
         Transfer ${(plan.price * 1.05).toFixed(2)} using the details below, then upload your
@@ -132,9 +133,11 @@ export default function OnboardingTransferPage() {
       <Button
         className="mt-8 w-full"
         disabled={upload.kind !== "success"}
+        loading={submitting}
         onClick={async () => {
           // The free lessons open immediately — the student is never left
           // with nothing to do while a human checks the receipt.
+          setSubmitting(true);
           setOnboardingAnswers({ paymentMethod: "transfer" });
           await setOnboardingStep("done");
           router.push("/onboarding/transfer/pending");
