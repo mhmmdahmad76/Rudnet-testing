@@ -12,7 +12,7 @@ import { OnboardingStepBar } from "@/components/lisaan/onboarding-step-bar";
 import { IconButton } from "@/components/lisaan/icon-button";
 import { DEMO_PLANS } from "@/lib/demo-data";
 import { getOnboardingAnswers, setOnboardingAnswers } from "@/lib/onboarding-store";
-import { setOnboardingStep } from "@/app/(auth)/actions";
+import { requestBankTransfer, setOnboardingStep } from "@/app/(auth)/actions";
 
 const TRANSFER_DETAILS = {
   iban: "AE07 0331 2345 6789 0123 456",
@@ -136,9 +136,11 @@ export default function OnboardingTransferPage() {
         loading={submitting}
         onClick={async () => {
           // The free lessons open immediately — the student is never left
-          // with nothing to do while a human checks the receipt.
+          // with nothing to do while a human checks the receipt. A real
+          // payment_requests row is what lets an admin actually approve it.
           setSubmitting(true);
           setOnboardingAnswers({ paymentMethod: "transfer" });
+          await requestBankTransfer(plan.id);
           await setOnboardingStep("done");
           router.push("/onboarding/transfer/pending");
         }}

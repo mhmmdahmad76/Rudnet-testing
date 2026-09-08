@@ -1,8 +1,17 @@
 import { LessonRow } from "@/components/lisaan/lesson-row";
-import { DEMO_COURSE, flattenItems, type LessonStatus } from "@/lib/demo-data";
+import { verifyStudentSession } from "@/lib/dal";
+import { MAIN_COURSE_SLUG, flattenCourseItems, formatDuration, getCourseForStudent, itemHref } from "@/lib/courses";
 
-export default function QuizzesPage() {
-  const quizzes = flattenItems().filter(({ item }) => item.kind === "quiz");
+export default async function QuizzesPage() {
+  const session = await verifyStudentSession();
+  const course = await getCourseForStudent(
+    MAIN_COURSE_SLUG,
+    session.studentId,
+    session.planStatus === "premium",
+  );
+  const quizzes = course
+    ? flattenCourseItems(course).filter(({ item }) => item.kind === "quiz")
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -11,11 +20,11 @@ export default function QuizzesPage() {
         {quizzes.map(({ unit, item }) => (
           <LessonRow
             key={item.id}
-            status={item.status as LessonStatus}
+            status={item.status}
             title={`${item.title} — ${unit.title}`}
             kind="Quiz"
-            duration={item.duration}
-            href={`/courses/${DEMO_COURSE.slug}/quiz/${item.id}`}
+            duration={formatDuration(item.durationMinutes)}
+            href={itemHref(MAIN_COURSE_SLUG, item)}
             lockedReason="Unlocks after the lesson before it"
           />
         ))}

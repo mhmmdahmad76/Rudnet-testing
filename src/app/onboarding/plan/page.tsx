@@ -60,7 +60,7 @@ export default function OnboardingPlanPage() {
     }
 
     setOnboardingAnswers({ paymentMethod: "card" });
-    await setPlanStatus("premium");
+    await setPlanStatus("premium", planId);
     await setOnboardingStep("done");
     router.push("/onboarding/ready");
   }

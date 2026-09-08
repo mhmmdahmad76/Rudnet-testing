@@ -7,6 +7,8 @@ import { hashPassword, randomDigitCode, randomToken, sha256Hex, verifyHash, veri
 import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/email";
 import { verifyStudentSession } from "@/lib/dal";
 import { getPublicQuestions, scorePlacementTest } from "@/lib/placement-test";
+import { markLessonComplete, submitQuizAttempt } from "@/lib/courses";
+import { DEMO_PLANS } from "@/lib/demo-data";
 import {
   clearPendingStudentCookie,
   countActiveStudentSessions,
@@ -276,9 +278,11 @@ export async function setSelfReportedLevel(level: string | null) {
   return { ok: true as const };
 }
 
-export async function setPlanStatus(status: "free" | "premium") {
+export async function setPlanStatus(status: "free" | "premium", planId?: "monthly" | "annual") {
   const session = await verifyStudentSession();
-  await db().sql`UPDATE students SET plan_status = ${status} WHERE id = ${session.studentId}`;
+  await db().sql`
+    UPDATE students SET plan_status = ${status}, plan_id = ${planId ?? null} WHERE id = ${session.studentId}
+  `;
   return { ok: true as const };
 }
 
@@ -300,4 +304,30 @@ export async function submitPlacementTest(answers: Record<string, number>) {
   `;
 
   return { ok: true as const, ...result };
+}
+
+export async function markLessonCompleteAction(itemId: string) {
+  const session = await verifyStudentSession();
+  await markLessonComplete(session.studentId, itemId);
+  return { ok: true as const };
+}
+
+export async function submitQuizAttemptAction(itemId: string, answers: Record<string, number>) {
+  const session = await verifyStudentSession();
+  return submitQuizAttempt(session.studentId, itemId, answers);
+}
+
+/** Bank transfer isn't auto-approved like the card path — it creates a
+ * pending request an admin has to review (see admin/(dashboard)/actions.ts
+ * resolvePaymentRequest). plan_status stays 'free' until then. */
+export async function requestBankTransfer(planId: "monthly" | "annual") {
+  const session = await verifyStudentSession();
+  const plan = DEMO_PLANS.find((p) => p.id === planId);
+  if (!plan) throw new Error(`Unknown plan: ${planId}`);
+
+  await db().sql`
+    INSERT INTO payment_requests (student_id, method, plan_id, amount, currency)
+    VALUES (${session.studentId}, 'transfer', ${planId}, ${plan.price}, ${plan.currency})
+  `;
+  return { ok: true as const };
 }

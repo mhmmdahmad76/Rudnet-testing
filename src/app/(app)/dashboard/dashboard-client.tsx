@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Award, BookOpen, Sparkles, Target, Zap } from "lucide-react";
 
@@ -14,39 +14,61 @@ import { LessonRow } from "@/components/lisaan/lesson-row";
 import { CefrLadder, LEVELS, type CefrLevel } from "@/components/lisaan/cefr-ladder";
 import { Banner } from "@/components/lisaan/banner";
 import { EmptyState } from "@/components/lisaan/empty-state";
-import { DEMO_COURSE, flattenItems, type LessonStatus } from "@/lib/demo-data";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/locale";
 import { getDictionary } from "@/lib/i18n";
+
+export interface DashboardCourseItem {
+  id: string;
+  title: string;
+  kind: "Video" | "Reading" | "Quiz";
+  duration: string;
+  status: "complete" | "current" | "locked";
+  href: string;
+}
+
+export interface DashboardCourse {
+  title: string;
+  meta: string;
+  progressPct: number;
+  resumeHref: string | null;
+  upNext: DashboardCourseItem[];
+}
+
+export interface DashboardStats {
+  quizzesPassed: number;
+  dayStreak: number;
+}
 
 export interface DashboardClientProps {
   name: string;
   level: string | null;
-  levelSource: "self" | "test" | null;
+  levelSource: "self" | "test" | "admin" | null;
   locale?: Locale;
+  course: DashboardCourse | null;
+  stats: DashboardStats;
 }
 
 function isCefrLevel(value: string | null): value is CefrLevel {
   return value !== null && (LEVELS as readonly string[]).includes(value);
 }
 
-/** ?state= lets you preview the documented dashboard states without a
- * backend: empty | loading | lapsed | failing | error. Default is the
- * happy path. */
+/** ?state= lets you preview the documented dashboard states without
+ * waiting for real data to reach them: loading | lapsed | failing | error.
+ * (The empty state now happens for real — see `!course` below.) */
 export default function DashboardClient({
   name,
   level,
   levelSource,
   locale = DEFAULT_LOCALE,
+  course,
+  stats,
 }: DashboardClientProps) {
   const state = useSearchParams().get("state");
   const t = getDictionary(locale).dashboard;
 
   if (state === "loading") return <DashboardSkeleton />;
-  if (state === "empty") return <DashboardEmpty />;
+  if (!course) return <DashboardEmpty />;
 
-  const items = flattenItems().slice(0, 3);
-  const currentItem = flattenItems().find(({ item }) => item.status === "current");
-  const courseProgress = 22;
   const firstName = name.split(" ")[0] || name;
 
   return (
@@ -82,9 +104,9 @@ export default function DashboardClient({
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile icon={BookOpen} tone="brand" value={`${courseProgress}%`} label={t.courseProgress} />
-        <StatTile icon={Zap} tone="warning" value="6" label={t.dayStreak} />
-        <StatTile icon={Target} tone="success" value="3" label={t.quizzesPassed} />
+        <StatTile icon={BookOpen} tone="brand" value={`${course.progressPct}%`} label={t.courseProgress} />
+        <StatTile icon={Zap} tone="warning" value={String(stats.dayStreak)} label={t.dayStreak} />
+        <StatTile icon={Target} tone="success" value={String(stats.quizzesPassed)} label={t.quizzesPassed} />
         <StatTile icon={Award} tone="achievement" value={level ?? "—"} label={t.currentLevel} />
       </div>
 
@@ -92,31 +114,25 @@ export default function DashboardClient({
         <div className="flex flex-col gap-4 rounded-2xl border border-stroke-default bg-bg-surface p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="t-h4 text-fg-primary">{DEMO_COURSE.title}</p>
-              <p className="t-body-xs text-fg-tertiary">{DEMO_COURSE.meta}</p>
+              <p className="t-h4 text-fg-primary">{course.title}</p>
+              <p className="t-body-xs text-fg-tertiary">{course.meta}</p>
             </div>
-            {currentItem && (
+            {course.resumeHref && (
               <Button asChild>
-                <Link href={`/courses/${DEMO_COURSE.slug}/lessons/${currentItem.item.id}`}>
-                  {t.resume}
-                </Link>
+                <Link href={course.resumeHref}>{t.resume}</Link>
               </Button>
             )}
           </div>
-          <Progress value={courseProgress} />
+          <Progress value={course.progressPct} />
           <div className="flex flex-col gap-1">
-            {items.map(({ item }) => (
+            {course.upNext.map((item) => (
               <LessonRow
                 key={item.id}
-                status={item.status as LessonStatus}
+                status={item.status}
                 title={item.title}
-                kind={item.kind === "quiz" ? "Quiz" : item.lessonKind}
+                kind={item.kind}
                 duration={item.duration}
-                href={
-                  item.kind === "lesson"
-                    ? `/courses/${DEMO_COURSE.slug}/lessons/${item.id}`
-                    : `/courses/${DEMO_COURSE.slug}/quiz/${item.id}`
-                }
+                href={item.href}
                 lockedReason="Unlocks after you finish the lesson before it"
               />
             ))}
@@ -170,13 +186,14 @@ function DashboardSkeleton() {
 }
 
 function DashboardEmpty() {
+  const router = useRouter();
   return (
     <div className="rounded-2xl border border-stroke-default bg-bg-surface">
       <EmptyState
         icon={BookOpen}
-        title="Start your first lesson"
-        body="You haven't started a course yet — pick up “Greetings and introductions” to get going."
-        action={{ label: "Start the first lesson", onClick: () => {} }}
+        title="No courses yet"
+        body="There's nothing published for you to take right now — check back soon."
+        action={{ label: "Browse courses", onClick: () => router.push("/courses") }}
       />
     </div>
   );

@@ -9,51 +9,50 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Banner } from "@/components/lisaan/banner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LessonRow } from "@/components/lisaan/lesson-row";
+import { LessonRow, type LessonRowProps } from "@/components/lisaan/lesson-row";
 import { IconChip } from "@/components/lisaan/icon-chip";
-import {
-  DEMO_COURSE,
-  findLesson,
-  flattenItems,
-  FREE_PREVIEW_UNIT_ID,
-  type LessonStatus,
-} from "@/lib/demo-data";
 
-export interface LessonClientProps {
-  course: string;
-  lessonId: string;
-  isPremium: boolean;
+export interface CourseItemView {
+  id: string;
+  kind: "lesson" | "quiz";
+  title: string;
+  lessonKind: "Video" | "Reading" | null;
+  duration: string;
+  status: LessonRowProps["status"];
+  href: string;
 }
 
-export function LessonClient({ course, lessonId, isPremium }: LessonClientProps) {
+export interface LessonClientProps {
+  courseSlug: string;
+  requiresPremium: boolean;
+  lesson: { id: string; title: string; lessonKind: "Video" | "Reading"; duration: string };
+  unit: { title: string; items: CourseItemView[] };
+  index: number;
+  totalItems: number;
+  previousHref: string | null;
+  nextHref: string | null;
+  rail: CourseItemView[];
+  markCompleteAction: (itemId: string) => Promise<unknown>;
+}
+
+export function LessonClient({
+  courseSlug,
+  requiresPremium,
+  lesson,
+  unit,
+  index,
+  totalItems,
+  previousHref,
+  nextHref,
+  rail,
+  markCompleteAction,
+}: LessonClientProps) {
   const router = useRouter();
   const demoState = useSearchParams().get("state");
 
-  const found = findLesson(course, lessonId);
   const [playing, setPlaying] = React.useState(false);
   const [captions, setCaptions] = React.useState<"en" | "ar">("en");
-
-  if (!found) {
-    return (
-      <div className="mx-auto max-w-3xl py-16 text-center">
-        <p className="t-h4 text-fg-primary">Lesson not found</p>
-        <Button asChild variant="secondary" className="mt-4">
-          <Link href="/dashboard">Back to dashboard</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  const { unit, lesson } = found;
-  const allItems = flattenItems();
-  const index = allItems.findIndex(({ item }) => item.id === lesson.id);
-  const previous = index > 0 ? allItems[index - 1] : null;
-  const next = index < allItems.length - 1 ? allItems[index + 1] : null;
-  const rail = allItems.slice(0, 5);
-
-  // Free preview unit is always open; everything else needs a premium plan,
-  // regardless of the demo course's own progression-locked status.
-  const requiresPremium = unit.id !== FREE_PREVIEW_UNIT_ID && !isPremium;
+  const [completing, setCompleting] = React.useState(false);
 
   if (requiresPremium) {
     return (
@@ -61,19 +60,29 @@ export function LessonClient({ course, lessonId, isPremium }: LessonClientProps)
         <IconChip icon={Lock} tone="neutral" size="lg" />
         <h1 className="t-h2 text-fg-primary">Unlock this lesson</h1>
         <p className="t-body-sm text-fg-secondary">
-          Your free preview is done. Upgrade to unlock “{lesson.title}” and the rest of{" "}
-          {DEMO_COURSE.title}.
+          Your free preview is done. Upgrade to unlock “{lesson.title}”.
         </p>
         <div className="flex gap-3">
           <Button asChild>
             <Link href="/onboarding/plan">Upgrade</Link>
           </Button>
           <Button variant="secondary" asChild>
-            <Link href={`/courses/${course}`}>See what&rsquo;s included</Link>
+            <Link href={`/courses/${courseSlug}`}>See what&rsquo;s included</Link>
           </Button>
         </div>
       </div>
     );
+  }
+
+  const unitCompleted = unit.items.filter((i) => i.status === "complete").length;
+  const unitProgress = unit.items.length > 0 ? Math.round((unitCompleted / unit.items.length) * 100) : 0;
+
+  async function completeAndContinue() {
+    setCompleting(true);
+    await markCompleteAction(lesson.id);
+    router.refresh();
+    if (nextHref) router.push(nextHref);
+    setCompleting(false);
   }
 
   return (
@@ -83,7 +92,7 @@ export function LessonClient({ course, lessonId, isPremium }: LessonClientProps)
           <Link href="/dashboard">Back</Link>
         </Button>
         <p className="t-body-sm text-fg-tertiary">
-          {DEMO_COURSE.title} · {unit.title} · Lesson {index + 1} of {allItems.length}
+          {unit.title} · Lesson {index + 1} of {totalItems}
         </p>
       </div>
 
@@ -177,15 +186,11 @@ export function LessonClient({ course, lessonId, isPremium }: LessonClientProps)
                 {unit.items.map((item) => (
                   <LessonRow
                     key={item.id}
-                    status={item.status as LessonStatus}
+                    status={item.status}
                     title={item.title}
-                    kind={item.kind === "quiz" ? "Quiz" : item.lessonKind}
+                    kind={item.kind === "quiz" ? "Quiz" : item.lessonKind!}
                     duration={item.duration}
-                    href={
-                      item.kind === "lesson"
-                        ? `/courses/${course}/lessons/${item.id}`
-                        : `/courses/${course}/quiz/${item.id}`
-                    }
+                    href={item.href}
                   />
                 ))}
               </div>
@@ -199,30 +204,10 @@ export function LessonClient({ course, lessonId, isPremium }: LessonClientProps)
           </Tabs>
 
           <div className="flex items-center justify-between border-t border-stroke-default pt-4">
-            <Button
-              variant="secondary"
-              disabled={!previous}
-              onClick={() =>
-                previous &&
-                router.push(
-                  previous.item.kind === "lesson"
-                    ? `/courses/${course}/lessons/${previous.item.id}`
-                    : `/courses/${course}/quiz/${previous.item.id}`,
-                )
-              }
-            >
+            <Button variant="secondary" disabled={!previousHref} onClick={() => previousHref && router.push(previousHref)}>
               Previous
             </Button>
-            <Button
-              onClick={() =>
-                next &&
-                router.push(
-                  next.item.kind === "lesson"
-                    ? `/courses/${course}/lessons/${next.item.id}`
-                    : `/courses/${course}/quiz/${next.item.id}`,
-                )
-              }
-            >
+            <Button onClick={completeAndContinue} loading={completing}>
               Mark complete and continue
             </Button>
           </div>
@@ -231,20 +216,16 @@ export function LessonClient({ course, lessonId, isPremium }: LessonClientProps)
         <div className="flex flex-col gap-4">
           <div className="rounded-2xl border border-stroke-default bg-bg-surface p-5">
             <p className="t-label-md mb-2 text-fg-primary">{unit.title}</p>
-            <Progress value={40} size="xs" className="mb-4" />
+            <Progress value={unitProgress} size="xs" className="mb-4" />
             <div className="flex flex-col gap-1">
-              {rail.map(({ item }) => (
+              {rail.map((item) => (
                 <LessonRow
                   key={item.id}
-                  status={item.status as LessonStatus}
+                  status={item.status}
                   title={item.title}
-                  kind={item.kind === "quiz" ? "Quiz" : item.lessonKind}
+                  kind={item.kind === "quiz" ? "Quiz" : item.lessonKind!}
                   duration={item.duration}
-                  href={
-                    item.kind === "lesson"
-                      ? `/courses/${course}/lessons/${item.id}`
-                      : `/courses/${course}/quiz/${item.id}`
-                  }
+                  href={item.href}
                   lockedReason="Unlocks after the lesson before it"
                 />
               ))}

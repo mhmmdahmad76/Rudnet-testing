@@ -13,19 +13,25 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { DEMO_COURSE, flattenItems } from "@/lib/demo-data";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/locale";
 import { getDictionary } from "@/lib/i18n";
 
+export interface AppSearchItem {
+  id: string;
+  title: string;
+  unitTitle: string;
+  href: string;
+}
+
 export interface AppSearchProps {
   locale?: Locale;
+  items?: AppSearchItem[];
 }
 
 /** Search focus opens a command palette over lessons and resources. */
-function AppSearch({ locale = DEFAULT_LOCALE }: AppSearchProps) {
+function AppSearch({ locale = DEFAULT_LOCALE, items = [] }: AppSearchProps) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
-  const items = flattenItems();
   const t = getDictionary(locale);
 
   return (
@@ -47,21 +53,17 @@ function AppSearch({ locale = DEFAULT_LOCALE }: AppSearchProps) {
         <CommandList>
           <CommandEmpty>No results.</CommandEmpty>
           <CommandGroup heading="Lessons and quizzes">
-            {items.map(({ unit, item }) => (
+            {items.map((item) => (
               <CommandItem
                 key={item.id}
                 value={item.title}
                 onSelect={() => {
                   setOpen(false);
-                  router.push(
-                    item.kind === "lesson"
-                      ? `/courses/${DEMO_COURSE.slug}/lessons/${item.id}`
-                      : `/courses/${DEMO_COURSE.slug}/quiz/${item.id}`,
-                  );
+                  router.push(item.href);
                 }}
               >
                 {item.title}
-                <span className="t-body-xs ms-auto text-fg-tertiary">{unit.title}</span>
+                <span className="t-body-xs ms-auto text-fg-tertiary">{item.unitTitle}</span>
               </CommandItem>
             ))}
           </CommandGroup>

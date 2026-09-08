@@ -8,17 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert } from "@/components/ui/alert";
 import { IconChip } from "@/components/lisaan/icon-chip";
-import { findQuiz } from "@/lib/demo-data";
 
 export default function QuizResultPage() {
   const params = useParams<{ course: string; quiz: string }>();
   const searchParams = useSearchParams();
   const demoState = searchParams.get("state");
-  const score = Number(searchParams.get("score") ?? "80");
-
-  const found = findQuiz(params.course, params.quiz);
-  if (!found) return null;
-  const { quiz } = found;
+  const score = Number(searchParams.get("score") ?? "0");
+  const passMark = Number(searchParams.get("passMark") ?? "60");
+  const passed = searchParams.get("passed") === "true";
 
   if (demoState === "awaiting") {
     return (
@@ -43,8 +40,6 @@ export default function QuizResultPage() {
     );
   }
 
-  const passed = score >= quiz.passMark;
-
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-6 text-center">
       <div className="relative flex size-28 items-center justify-center rounded-full border-4 border-stroke-default">
@@ -65,27 +60,26 @@ export default function QuizResultPage() {
           <IconChip icon={Award} tone="achievement" />
           <h1 className="t-h2 text-fg-primary">You passed</h1>
           <p className="t-body-sm max-w-sm text-fg-secondary">
-            The pass mark was {quiz.passMark}%. Two answers were worth a second look — the past
-            simple negative form, and polite requests with “could”.
+            The pass mark was {passMark}%. Nice work.
           </p>
           <div className="flex gap-3">
-            <Button>Continue to the next unit</Button>
-            <Button variant="secondary" asChild>
-              <Link href={`/courses/${params.course}/lessons/${quiz.id}`}>Review my answers</Link>
+            <Button asChild>
+              <Link href={`/courses/${params.course}`}>Continue to the next unit</Link>
             </Button>
           </div>
         </>
       ) : (
         <>
           <IconChip icon={Clock} tone="warning" />
-          <h1 className="t-h2 text-fg-primary">Not quite — {score}%, the pass mark is {quiz.passMark}%</h1>
+          <h1 className="t-h2 text-fg-primary">
+            Not quite — {score}%, the pass mark is {passMark}%
+          </h1>
           <p className="t-body-sm max-w-sm text-fg-secondary">
-            Review “Past simple tense” (4:12) before your next attempt — that&rsquo;s where most of the
-            missed points came from. You have 2 attempts left.
+            Review the unit before your next attempt.
           </p>
           <div className="flex gap-3">
             <Button asChild>
-              <Link href={`/courses/${params.course}/lessons/${quiz.id}`}>Review the lesson</Link>
+              <Link href={`/courses/${params.course}`}>Back to the course</Link>
             </Button>
             <Button variant="secondary" asChild>
               <Link href={`/courses/${params.course}/quiz/${params.quiz}`}>Try again</Link>

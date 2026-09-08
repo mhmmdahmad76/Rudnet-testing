@@ -21,8 +21,9 @@ export interface StudentSession {
   emailVerified: boolean;
   onboardingStep: string;
   level: string | null;
-  levelSource: "self" | "test" | null;
+  levelSource: "self" | "test" | "admin" | null;
   planStatus: "free" | "premium";
+  planId: "monthly" | "annual" | null;
 }
 
 interface StudentRow {
@@ -32,8 +33,9 @@ interface StudentRow {
   onboarding_step: string;
   suspended: boolean;
   level: string | null;
-  level_source: "self" | "test" | null;
+  level_source: "self" | "test" | "admin" | null;
   plan_status: "free" | "premium";
+  plan_id: "monthly" | "annual" | null;
 }
 
 function toStudentSession(studentId: number, row: StudentRow): StudentSession {
@@ -46,6 +48,7 @@ function toStudentSession(studentId: number, row: StudentRow): StudentSession {
     level: row.level,
     levelSource: row.level_source,
     planStatus: row.plan_status,
+    planId: row.plan_id,
   };
 }
 
@@ -55,7 +58,7 @@ export const verifyStudentSession = cache(async (): Promise<StudentSession> => {
 
   const rows = await db().sql`
     SELECT s.name, s.email, s.email_verified, s.onboarding_step, s.suspended,
-           s.level, s.level_source, s.plan_status
+           s.level, s.level_source, s.plan_status, s.plan_id
     FROM sessions sess
     JOIN students s ON s.id = sess.subject_id
     WHERE sess.id = ${claims.sid} AND sess.kind = 'student' AND sess.expires_at > NOW()
@@ -77,7 +80,7 @@ export const getOptionalStudentSession = cache(async (): Promise<StudentSession 
   if (!claims) return null;
   const rows = await db().sql`
     SELECT s.name, s.email, s.email_verified, s.onboarding_step, s.suspended,
-           s.level, s.level_source, s.plan_status
+           s.level, s.level_source, s.plan_status, s.plan_id
     FROM sessions sess
     JOIN students s ON s.id = sess.subject_id
     WHERE sess.id = ${claims.sid} AND sess.kind = 'student' AND sess.expires_at > NOW()

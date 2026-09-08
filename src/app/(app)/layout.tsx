@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/locale";
 import { getDictionary } from "@/lib/i18n";
 import { verifyStudentSession } from "@/lib/dal";
+import { MAIN_COURSE_SLUG, flattenCourseItems, getCourseForStudent, itemHref } from "@/lib/courses";
 import { signOutStudent } from "@/app/(auth)/actions";
 
 function navFor(t: ReturnType<typeof getDictionary>): AppNavItem[] {
@@ -34,6 +35,16 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const NAV = navFor(t);
   const session = await verifyStudentSession();
   const { name, email, planStatus } = session;
+
+  const course = await getCourseForStudent(MAIN_COURSE_SLUG, session.studentId, planStatus === "premium");
+  const searchItems = course
+    ? flattenCourseItems(course).map(({ unit, item }) => ({
+        id: item.id,
+        title: item.title,
+        unitTitle: unit.title,
+        href: itemHref(MAIN_COURSE_SLUG, item),
+      }))
+    : [];
 
   return (
     <div className="flex min-h-screen">
@@ -60,7 +71,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="hidden h-16 items-center gap-4 border-b border-stroke-default bg-bg-surface px-6 lg:flex">
-          <AppSearch locale={locale} />
+          <AppSearch locale={locale} items={searchItems} />
           <div className="ms-auto flex items-center gap-2">
             <IconButton aria-label={t.notifications} variant="ghost">
               <Bell aria-hidden />

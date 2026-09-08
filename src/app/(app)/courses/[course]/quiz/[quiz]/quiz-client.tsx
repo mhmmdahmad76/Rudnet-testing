@@ -11,24 +11,44 @@ import { QuizOption } from "@/components/lisaan/quiz-option";
 import { Modal } from "@/components/lisaan/modal";
 import { Banner } from "@/components/lisaan/banner";
 import { IconChip } from "@/components/lisaan/icon-chip";
-import { DEMO_COURSE, FREE_PREVIEW_UNIT_ID, findQuiz } from "@/lib/demo-data";
+import type { PublicQuizQuestion, QuizSubmitResult } from "@/lib/courses";
 
 export interface QuizClientProps {
-  course: string;
+  courseSlug: string;
   quizId: string;
-  isPremium: boolean;
+  requiresPremium: boolean;
+  title: string;
+  unitTitle: string;
+  passMark: number;
+  attemptsAllowed: number;
+  attemptsLeft: number;
+  questions: PublicQuizQuestion[];
+  submitAction: (
+    itemId: string,
+    answers: Record<string, number>,
+  ) => Promise<QuizSubmitResult | { ok: false; reason: "no-attempts-left" }>;
 }
 
-export function QuizClient({ course, quizId, isPremium }: QuizClientProps) {
+export function QuizClient({
+  courseSlug,
+  quizId,
+  requiresPremium,
+  title,
+  unitTitle,
+  attemptsAllowed,
+  attemptsLeft,
+  questions,
+  submitAction,
+}: QuizClientProps) {
   const router = useRouter();
   const demoState = useSearchParams().get("state");
 
-  const found = findQuiz(course, quizId);
   const [index, setIndex] = React.useState(0);
-  const [answers, setAnswers] = React.useState<Record<string, string>>({});
+  const [answers, setAnswers] = React.useState<Record<string, number>>({});
   const [exitOpen, setExitOpen] = React.useState(false);
   const [elapsed, setElapsed] = React.useState(0);
   const [justSaved, setJustSaved] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
   const offline = demoState === "offline";
 
   React.useEffect(() => {
@@ -37,67 +57,70 @@ export function QuizClient({ course, quizId, isPremium }: QuizClientProps) {
     return () => clearInterval(timer);
   }, [offline]);
 
-  if (!found || found.quiz.questions.length === 0) {
-    return (
-      <div className="mx-auto max-w-xl py-16 text-center">
-        <p className="t-h4 text-fg-primary">Quiz not found</p>
-      </div>
-    );
-  }
-
-  if (found.unit.id !== FREE_PREVIEW_UNIT_ID && !isPremium) {
+  if (requiresPremium) {
     return (
       <div className="mx-auto flex max-w-xl flex-col items-center gap-4 py-16 text-center">
         <IconChip icon={Lock} tone="neutral" size="lg" />
         <h1 className="t-h2 text-fg-primary">Unlock this quiz</h1>
         <p className="t-body-sm text-fg-secondary">
-          Your free preview is done. Upgrade to unlock “{found.quiz.title}” and the rest of{" "}
-          {DEMO_COURSE.title}.
+          Your free preview is done. Upgrade to unlock “{title}”.
         </p>
         <div className="flex gap-3">
           <Button asChild>
             <Link href="/onboarding/plan">Upgrade</Link>
           </Button>
           <Button variant="secondary" asChild>
-            <Link href={`/courses/${course}`}>See what&rsquo;s included</Link>
+            <Link href={`/courses/${courseSlug}`}>See what&rsquo;s included</Link>
           </Button>
         </div>
       </div>
     );
   }
 
-  if (demoState === "no-attempts") {
+  if (questions.length === 0) {
     return (
-      <div className="mx-auto flex max-w-xl flex-col items-center gap-4 py-16 text-center">
-        <h1 className="t-h2 text-fg-primary">No attempts left</h1>
-        <p className="t-body-sm text-fg-secondary">
-          Your best score was 52% against a 60% pass mark — you&rsquo;ve used all 3 attempts.
-        </p>
-        <div className="flex gap-3">
-          <Button variant="secondary">Review the unit</Button>
-          <Button>Ask my teacher for another attempt</Button>
-        </div>
+      <div className="mx-auto max-w-xl py-16 text-center">
+        <p className="t-h4 text-fg-primary">This quiz isn&rsquo;t ready yet</p>
+        <p className="t-body-sm mt-2 text-fg-secondary">Check back once your instructor adds questions.</p>
       </div>
     );
   }
 
-  const { quiz } = found;
-  const question = quiz.questions[index]!;
-  const selected = answers[question.id];
-  const isLast = index === quiz.questions.length - 1;
+  if (attemptsLeft <= 0) {
+    return (
+      <div className="mx-auto flex max-w-xl flex-col items-center gap-4 py-16 text-center">
+        <h1 className="t-h2 text-fg-primary">No attempts left</h1>
+        <p className="t-body-sm text-fg-secondary">
+          You&rsquo;ve used all {attemptsAllowed} attempts for &ldquo;{title}&rdquo;.
+        </p>
+        <Button asChild variant="secondary">
+          <Link href={`/courses/${courseSlug}`}>Back to the course</Link>
+        </Button>
+      </div>
+    );
+  }
 
-  function select(marker: string) {
-    setAnswers((current) => ({ ...current, [question.id]: marker }));
+  const question = questions[index]!;
+  const selected = answers[question.id];
+  const isLast = index === questions.length - 1;
+
+  function select(optionIndex: number) {
+    setAnswers((current) => ({ ...current, [question.id]: optionIndex }));
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 1500);
   }
 
-  function submit() {
-    const correctCount = quiz.questions.filter(
-      (q) => answers[q.id] === q.options.find((o) => o.correct)?.marker,
-    ).length;
-    const score = Math.round((correctCount / quiz.questions.length) * 100);
-    router.push(`/courses/${course}/quiz/${quizId}/result?score=${score}`);
+  async function submit() {
+    setSubmitting(true);
+    const result = await submitAction(quizId, answers);
+    setSubmitting(false);
+    if (!result.ok) {
+      router.push(`/courses/${courseSlug}/quiz/${quizId}?state=no-attempts`);
+      return;
+    }
+    router.push(
+      `/courses/${courseSlug}/quiz/${quizId}/result?score=${result.score}&passed=${result.passed}&passMark=${result.passMark}`,
+    );
   }
 
   const format = (seconds: number) =>
@@ -115,9 +138,9 @@ export function QuizClient({ course, quizId, isPremium }: QuizClientProps) {
           <X aria-hidden />
         </button>
         <div className="text-center">
-          <p className="t-label-md text-fg-primary">{quiz.title}</p>
+          <p className="t-label-md text-fg-primary">{title}</p>
           <p className="t-body-xs text-fg-tertiary">
-            {quiz.questions.length} questions · no time limit · you may retake it
+            {unitTitle} · {questions.length} questions
           </p>
         </div>
         <span className="t-numeric-sm text-fg-tertiary">{format(elapsed)}</span>
@@ -130,30 +153,23 @@ export function QuizClient({ course, quizId, isPremium }: QuizClientProps) {
           body={`Answers 1–${index + 1} saved offline · timer paused`}
         />
       )}
-      {demoState === "submit-failed" && (
-        <Banner
-          tone="danger"
-          title="Submission failed"
-          body="This attempt wasn't counted — try submitting again, or save and finish later. Attempt ID: 8841-A."
-        />
-      )}
 
-      <Progress value={((index + 1) / quiz.questions.length) * 100} />
+      <Progress value={((index + 1) / questions.length) * 100} />
 
       <div className="flex flex-col gap-4 rounded-2xl border border-stroke-default bg-bg-surface p-6">
-        <p className="t-overline text-fg-brand">Question {index + 1} of {quiz.questions.length}</p>
+        <p className="t-overline text-fg-brand">Question {index + 1} of {questions.length}</p>
         <p className="t-h4 text-fg-primary">{question.prompt}</p>
         {question.hint && <p className="t-body-sm text-fg-tertiary">{question.hint}</p>}
 
         <div className="flex flex-col gap-2">
-          {question.options.map((option) => (
+          {question.options.map((option, optionIndex) => (
             <QuizOption
-              key={option.marker}
-              marker={option.marker}
-              answer={selected === option.marker ? "selected" : "default"}
-              onClick={() => select(option.marker)}
+              key={optionIndex}
+              marker={String.fromCharCode(65 + optionIndex)}
+              answer={selected === optionIndex ? "selected" : "default"}
+              onClick={() => select(optionIndex)}
             >
-              {option.text}
+              {option}
             </QuizOption>
           ))}
         </div>
@@ -172,13 +188,13 @@ export function QuizClient({ course, quizId, isPremium }: QuizClientProps) {
               Previous
             </Button>
             {isLast ? (
-              <Button size="sm" disabled={!selected || offline} onClick={submit}>
+              <Button size="sm" disabled={selected === undefined || offline} loading={submitting} onClick={submit}>
                 Submit
               </Button>
             ) : (
               <Button
                 size="sm"
-                disabled={!selected || offline}
+                disabled={selected === undefined || offline}
                 onClick={() => setIndex((i) => i + 1)}
               >
                 Next question
@@ -197,7 +213,7 @@ export function QuizClient({ course, quizId, isPremium }: QuizClientProps) {
         cancel={{ label: "Stay", onClick: () => setExitOpen(false) }}
         confirm={{
           label: "Leave",
-          onClick: () => router.push(`/courses/${course}/lessons/${quiz.id}`),
+          onClick: () => router.push(`/courses/${courseSlug}`),
         }}
       />
     </div>

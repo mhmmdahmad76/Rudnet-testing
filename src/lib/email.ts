@@ -28,6 +28,17 @@ export async function sendVerificationEmail(to: string, code: string) {
   );
 }
 
+/** Free-form email from the instructor to one student — admin "Email
+ * students" action. `bodyText` is plain text; line breaks become <p>s. */
+export async function sendAdminBroadcastEmail(to: string, subject: string, bodyText: string) {
+  const paragraphs = bodyText
+    .split("\n")
+    .filter((line) => line.trim().length > 0)
+    .map((line) => `<p>${line}</p>`)
+    .join("\n");
+  await sendEmail(to, subject, paragraphs || "<p></p>");
+}
+
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   await sendEmail(
     to,

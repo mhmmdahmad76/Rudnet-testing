@@ -11,32 +11,32 @@ import { Field } from "@/components/lisaan/field";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import type { Level, Student } from "@/lib/demo-data";
 import {
   emptyCriteria,
+  hasTag,
   isoDaysAgo,
   isoStartOfYear,
   isoToday,
   matchesCriteria,
-  PAYMENT_METHODS,
+  PAYMENT_TAGS,
+  STUDENT_TAGS,
+  type AdminStudent,
   type DatePreset,
-  type PaymentMethod,
+  type PaymentTag,
   type SavedFilterCriteria,
+  type StudentTag,
 } from "@/lib/use-student-filters";
 import { saveView, useSavedViews, deleteView, type SavedView } from "@/lib/saved-views";
 
-const ALL_LEVELS: Level[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
-const STATUS_LABEL: Record<Student["status"], string> = {
-  active: "Active",
-  trial: "Trial",
-  pending: "Pending",
-  lapsed: "Lapsed",
+const ALL_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const STATUS_LABEL: Record<StudentTag, string> = {
+  premium: "Premium",
+  free: "Free plan",
+  suspended: "Suspended",
+  unverified: "Email not verified",
 };
-const ALL_STATUSES: Student["status"][] = ["active", "trial", "pending", "lapsed"];
-const PAYMENT_LABEL: Record<PaymentMethod, string> = {
-  card: "Card",
-  transfer: "Bank transfer",
-  none: "None on file",
+const PAYMENT_LABEL: Record<PaymentTag, string> = {
+  pending_transfer: "Bank transfer awaiting approval",
 };
 const DATE_PRESETS: { value: DatePreset; label: string }[] = [
   { value: "30d", label: "30 days" },
@@ -49,7 +49,7 @@ export interface AdvancedFiltersSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Students already narrowed by search — the pool counts are computed against. */
-  students: Student[];
+  students: AdminStudent[];
   criteria: SavedFilterCriteria;
   onApply: (criteria: SavedFilterCriteria) => void;
 }
@@ -165,12 +165,12 @@ function AdvancedFiltersSheet({ open, onOpenChange, students, criteria, onApply 
 
             <section className="flex flex-col gap-1">
               <p className="t-label-md mb-1 text-fg-primary">Status</p>
-              {ALL_STATUSES.map((status) => (
+              {STUDENT_TAGS.map((tag) => (
                 <Checkbox
-                  key={status}
-                  checked={draft.status.includes(status)}
-                  onCheckedChange={() => toggle("status", status)}
-                  label={`${STATUS_LABEL[status]} (${students.filter((s) => s.status === status).length})`}
+                  key={tag}
+                  checked={draft.status.includes(tag)}
+                  onCheckedChange={() => toggle("status", tag)}
+                  label={`${STATUS_LABEL[tag]} (${students.filter((s) => hasTag(s, tag)).length})`}
                 />
               ))}
             </section>
@@ -249,13 +249,13 @@ function AdvancedFiltersSheet({ open, onOpenChange, students, criteria, onApply 
             </section>
 
             <section className="flex flex-col gap-1">
-              <p className="t-label-md mb-1 text-fg-primary">Payment method</p>
-              {PAYMENT_METHODS.map((method) => (
+              <p className="t-label-md mb-1 text-fg-primary">Payment</p>
+              {PAYMENT_TAGS.map((tag) => (
                 <Checkbox
-                  key={method}
-                  checked={draft.payment.includes(method)}
-                  onCheckedChange={() => toggle("payment", method)}
-                  label={PAYMENT_LABEL[method]}
+                  key={tag}
+                  checked={draft.payment.includes(tag)}
+                  onCheckedChange={() => toggle("payment", tag)}
+                  label={PAYMENT_LABEL[tag]}
                 />
               ))}
             </section>

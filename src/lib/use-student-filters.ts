@@ -2,14 +2,36 @@
 
 import { parseAsArrayOf, parseAsInteger, parseAsString, parseAsStringEnum, useQueryStates } from "nuqs";
 
-import type { Student } from "@/lib/demo-data";
-
 export type SortKey = "newest" | "name" | "progress" | "level";
 export const SORT_KEYS: SortKey[] = ["newest", "name", "progress", "level"];
 
 export type DatePreset = "30d" | "90d" | "year" | "custom";
-export const PAYMENT_METHODS = ["card", "transfer", "none"] as const;
-export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+/** Independent, non-exclusive tags a real student can carry — replaces the
+ * old fake active/trial/pending/lapsed status, which didn't correspond to
+ * any real column. */
+export const STUDENT_TAGS = ["premium", "free", "suspended", "unverified"] as const;
+export type StudentTag = (typeof STUDENT_TAGS)[number];
+
+export const PAYMENT_TAGS = ["pending_transfer"] as const;
+export type PaymentTag = (typeof PAYMENT_TAGS)[number];
+
+/** A real student row, as returned by lib/admin-students.ts. Kept here
+ * (not in the server-only DAL module) so client components can import the
+ * type without pulling in the database driver. */
+export interface AdminStudent {
+  id: number;
+  name: string;
+  email: string;
+  level: string | null;
+  planStatus: "free" | "premium";
+  planId: "monthly" | "annual" | null;
+  suspended: boolean;
+  emailVerified: boolean;
+  createdAt: string; // ISO yyyy-mm-dd
+  progressPct: number;
+  pendingTransfer: boolean;
+}
 
 /**
  * Every filter/sort/column field the students table exposes, kept in the URL
@@ -73,16 +95,30 @@ export function emptyCriteria(): SavedFilterCriteria {
   };
 }
 
-export function matchesCriteria(student: Student, criteria: SavedFilterCriteria): boolean {
-  if (criteria.level.length > 0 && !criteria.level.includes(student.level)) return false;
-  if (criteria.status.length > 0 && !criteria.status.includes(student.status)) return false;
+export function hasTag(student: AdminStudent, tag: string): boolean {
+  switch (tag as StudentTag) {
+    case "premium":
+      return student.planStatus === "premium";
+    case "free":
+      return student.planStatus === "free";
+    case "suspended":
+      return student.suspended;
+    case "unverified":
+      return !student.emailVerified;
+    default:
+      return false;
+  }
+}
+
+export function matchesCriteria(student: AdminStudent, criteria: SavedFilterCriteria): boolean {
+  if (criteria.level.length > 0 && !(student.level && criteria.level.includes(student.level))) return false;
+  if (criteria.status.length > 0 && !criteria.status.some((tag) => hasTag(student, tag))) return false;
   if (criteria.minProgress !== null && student.progressPct < criteria.minProgress) return false;
   if (criteria.maxProgress !== null && student.progressPct > criteria.maxProgress) return false;
-  if (criteria.dateFrom !== null && student.joinedAt < criteria.dateFrom) return false;
-  if (criteria.dateTo !== null && student.joinedAt > criteria.dateTo) return false;
-  if (criteria.payment.length > 0) {
-    const method = student.paymentMethod ?? "none";
-    if (!criteria.payment.includes(method)) return false;
+  if (criteria.dateFrom !== null && student.createdAt < criteria.dateFrom) return false;
+  if (criteria.dateTo !== null && student.createdAt > criteria.dateTo) return false;
+  if (criteria.payment.length > 0 && !(criteria.payment.includes("pending_transfer") && student.pendingTransfer)) {
+    return false;
   }
   return true;
 }
