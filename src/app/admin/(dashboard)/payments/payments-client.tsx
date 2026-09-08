@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +56,13 @@ export function PaymentsClient({ requests }: { requests: PaymentRequestRow[] }) 
             </div>
             <div className="flex items-center gap-2">
               <Badge tone="warning">Awaiting review</Badge>
+              {request.receiptKey && (
+                <Button size="sm" variant="ghost" icon={<Paperclip />} asChild>
+                  <a href={`/admin/api/receipts/${request.id}`} target="_blank" rel="noreferrer">
+                    {request.receiptFilename ?? "Receipt"}
+                  </a>
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="secondary"

@@ -6,9 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { ChoiceCard } from "@/components/lisaan/choice-card";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/lisaan/field";
-import { Input } from "@/components/ui/input";
-import { Alert } from "@/components/ui/alert";
 import { OnboardingStepBar } from "@/components/lisaan/onboarding-step-bar";
 import { DEMO_PLANS } from "@/lib/demo-data";
 import { getOnboardingAnswers, setOnboardingAnswers } from "@/lib/onboarding-store";
@@ -23,10 +20,6 @@ export default function OnboardingPlanPage() {
   const [planId, setPlanId] = React.useState<"monthly" | "annual">(
     () => (searchParams.get("plan") as "monthly" | "annual") ?? getOnboardingAnswers().plan ?? "annual",
   );
-  const [showCardForm, setShowCardForm] = React.useState(false);
-  const [cardNumber, setCardNumber] = React.useState("");
-  const [processing, setProcessing] = React.useState(false);
-  const [declined, setDeclined] = React.useState(false);
   const [transferPending, setTransferPending] = React.useState(false);
   const [skipping, setSkipping] = React.useState(false);
 
@@ -46,25 +39,6 @@ export default function OnboardingPlanPage() {
     router.push("/onboarding/transfer");
   }
 
-  async function payByCard(event: React.FormEvent) {
-    event.preventDefault();
-    setDeclined(false);
-    setProcessing(true);
-    await new Promise((resolve) => setTimeout(resolve, 900));
-
-    // Test card 4000000000000002 simulates a decline, like Stripe's test suite.
-    if (cardNumber.replace(/\s+/g, "") === "4000000000000002") {
-      setProcessing(false);
-      setDeclined(true);
-      return;
-    }
-
-    setOnboardingAnswers({ paymentMethod: "card" });
-    await setPlanStatus("premium", planId);
-    await setOnboardingStep("done");
-    router.push("/onboarding/ready");
-  }
-
   async function skipPayment() {
     setSkipping(true);
     await setPlanStatus("free");
@@ -72,7 +46,7 @@ export default function OnboardingPlanPage() {
     router.push("/onboarding/ready");
   }
 
-  const pending = processing || transferPending || skipping;
+  const pending = transferPending || skipping;
 
   return (
     <div>
@@ -107,44 +81,15 @@ export default function OnboardingPlanPage() {
         </div>
       </div>
 
-      {declined && (
-        <Alert
-          className="mt-6"
-          tone="danger"
-          title="Your card was declined"
-          body="Your issuer declined this charge (insufficient funds). Your card is kept on file — try another card, or pay by bank transfer instead."
-        />
-      )}
-
-      {!showCardForm ? (
-        <div className="mt-8 flex flex-col gap-3">
-          <Button onClick={() => setShowCardForm(true)} disabled={pending}>
-            Pay by card
-          </Button>
-          <Button variant="secondary" loading={transferPending} disabled={pending} onClick={payByTransfer}>
-            Pay by bank transfer
-          </Button>
-        </div>
-      ) : (
-        <form onSubmit={payByCard} className="mt-8 flex flex-col gap-4">
-          <Field label="Card number" help="Demo only — try 4000 0000 0000 0002 to see a decline.">
-            <Input
-              inputMode="numeric"
-              placeholder="4242 4242 4242 4242"
-              value={cardNumber}
-              onChange={(event) => setCardNumber(event.target.value)}
-              disabled={pending}
-              required
-            />
-          </Field>
-          <Button type="submit" loading={processing} disabled={pending && !processing}>
-            Pay ${total.toFixed(2)}
-          </Button>
-          <Button type="button" variant="ghost" disabled={pending} onClick={payByTransfer}>
-            Pay by bank transfer instead
-          </Button>
-        </form>
-      )}
+      <div className="mt-8 flex flex-col gap-3">
+        <Button loading={transferPending} disabled={pending} onClick={payByTransfer}>
+          Pay by bank transfer
+        </Button>
+        <p className="t-body-xs text-center text-fg-tertiary">
+          You&rsquo;ll get our bank details and upload your payment receipt on the next screen — an
+          instructor confirms it manually, usually within a day.
+        </p>
+      </div>
 
       <div className="mt-4 text-center">
         <button

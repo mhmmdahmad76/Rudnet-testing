@@ -109,18 +109,21 @@ export interface PaymentRequestRow {
   studentId: number;
   studentName: string;
   studentEmail: string;
-  method: "card" | "transfer";
+  method: "transfer";
   planId: "monthly" | "annual";
   amount: number;
   currency: string;
   status: "pending" | "approved" | "rejected";
   createdAt: string;
+  receiptKey: string | null;
+  receiptFilename: string | null;
 }
 
 export async function listPendingPaymentRequests(): Promise<PaymentRequestRow[]> {
   const rows = await db().sql`
     SELECT pr.id, pr.student_id, s.name AS student_name, s.email AS student_email,
-           pr.method, pr.plan_id, pr.amount, pr.currency, pr.status, pr.created_at
+           pr.method, pr.plan_id, pr.amount, pr.currency, pr.status, pr.created_at,
+           pr.receipt_key, pr.receipt_filename
     FROM payment_requests pr
     JOIN students s ON s.id = pr.student_id
     WHERE pr.status = 'pending'
@@ -132,12 +135,14 @@ export async function listPendingPaymentRequests(): Promise<PaymentRequestRow[]>
       student_id: number;
       student_name: string;
       student_email: string;
-      method: "card" | "transfer";
+      method: "transfer";
       plan_id: "monthly" | "annual";
       amount: string;
       currency: string;
       status: "pending" | "approved" | "rejected";
       created_at: string;
+      receipt_key: string | null;
+      receipt_filename: string | null;
     }[]
   ).map((r) => ({
     id: r.id,
@@ -150,7 +155,18 @@ export async function listPendingPaymentRequests(): Promise<PaymentRequestRow[]>
     currency: r.currency,
     status: r.status,
     createdAt: r.created_at,
+    receiptKey: r.receipt_key,
+    receiptFilename: r.receipt_filename,
   }));
+}
+
+/** Looked up separately (not via listPendingPaymentRequests) when resolving
+ * one request from the receipt-download route, which only has the id. */
+export async function getPaymentRequestById(id: number) {
+  const rows = await db().sql`SELECT receipt_key, receipt_filename FROM payment_requests WHERE id = ${id}`;
+  const row = rows[0] as { receipt_key: string | null; receipt_filename: string | null } | undefined;
+  if (!row) return null;
+  return { receiptKey: row.receipt_key, receiptFilename: row.receipt_filename };
 }
 
 export async function resolvePaymentRequest(

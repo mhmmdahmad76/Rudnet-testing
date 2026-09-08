@@ -8,6 +8,7 @@ import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/email";
 import { verifyStudentSession } from "@/lib/dal";
 import { getPublicQuestions, scorePlacementTest } from "@/lib/placement-test";
 import { markLessonComplete, submitQuizAttempt } from "@/lib/courses";
+import { uploadReceipt } from "@/lib/receipts";
 import { DEMO_PLANS } from "@/lib/demo-data";
 import {
   clearPendingStudentCookie,
@@ -317,17 +318,20 @@ export async function submitQuizAttemptAction(itemId: string, answers: Record<st
   return submitQuizAttempt(session.studentId, itemId, answers);
 }
 
-/** Bank transfer isn't auto-approved like the card path — it creates a
- * pending request an admin has to review (see admin/(dashboard)/actions.ts
+/** Bank transfer is the only way to pay, and it isn't auto-approved — this
+ * creates a pending request, with the uploaded proof of payment stored for
+ * real, that an admin has to review (see admin/(dashboard)/actions.ts
  * resolvePaymentRequest). plan_status stays 'free' until then. */
-export async function requestBankTransfer(planId: "monthly" | "annual") {
+export async function requestBankTransfer(planId: "monthly" | "annual", receiptFile: File) {
   const session = await verifyStudentSession();
   const plan = DEMO_PLANS.find((p) => p.id === planId);
   if (!plan) throw new Error(`Unknown plan: ${planId}`);
 
+  const receipt = await uploadReceipt(session.studentId, receiptFile);
+
   await db().sql`
-    INSERT INTO payment_requests (student_id, method, plan_id, amount, currency)
-    VALUES (${session.studentId}, 'transfer', ${planId}, ${plan.price}, ${plan.currency})
+    INSERT INTO payment_requests (student_id, method, plan_id, amount, currency, receipt_key, receipt_filename)
+    VALUES (${session.studentId}, 'transfer', ${planId}, ${plan.price}, ${plan.currency}, ${receipt.key}, ${receipt.filename})
   `;
   return { ok: true as const };
 }

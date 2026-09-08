@@ -10,7 +10,7 @@ export interface OnboardingAnswers {
   pace?: "2" | "4" | "6";
   reminders?: boolean;
   plan?: "monthly" | "annual";
-  paymentMethod?: "card" | "transfer";
+  paymentMethod?: "transfer";
 }
 
 const KEY = "lisaan_onboarding_answers";

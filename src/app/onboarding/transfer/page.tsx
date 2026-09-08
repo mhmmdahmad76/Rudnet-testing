@@ -22,7 +22,10 @@ const TRANSFER_DETAILS = {
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
-type UploadState = { kind: "empty" } | { kind: "uploading"; progress: number; filename: string } | { kind: "success"; filename: string; sizeLabel: string } | { kind: "error"; filename: string; message: string };
+type UploadState =
+  | { kind: "empty" }
+  | { kind: "attached"; file: File }
+  | { kind: "error"; filename: string; message: string };
 
 function CopyField({ label, value }: { label: string; value: string }) {
   return (
@@ -65,21 +68,20 @@ export default function OnboardingTransferPage() {
       return;
     }
 
-    setUpload({ kind: "uploading", progress: 0, filename: file.name });
-    const timer = setInterval(() => {
-      setUpload((current) => {
-        if (current.kind !== "uploading") {
-          clearInterval(timer);
-          return current;
-        }
-        const next = current.progress + 25;
-        if (next >= 100) {
-          clearInterval(timer);
-          return { kind: "success", filename: file.name, sizeLabel: `${(file.size / (1024 * 1024)).toFixed(1)} MB` };
-        }
-        return { ...current, progress: next };
-      });
-    }, 200);
+    setUpload({ kind: "attached", file });
+  }
+
+  async function submitTransfer() {
+    if (upload.kind !== "attached") return;
+    // The free lessons open immediately — the student is never left with
+    // nothing to do while a human checks the receipt. The uploaded file is
+    // stored for real (Netlify Blobs) and linked to a real payment_requests
+    // row so an admin can actually open and review it.
+    setSubmitting(true);
+    setOnboardingAnswers({ paymentMethod: "transfer" });
+    await requestBankTransfer(plan.id, upload.file);
+    await setOnboardingStep("done");
+    router.push("/onboarding/transfer/pending");
   }
 
   return (
@@ -108,17 +110,12 @@ export default function OnboardingTransferPage() {
         {upload.kind === "empty" && (
           <FileUpload state="empty" meta="PDF or image, up to 10 MB" onFiles={handleFiles} />
         )}
-        {upload.kind === "uploading" && (
+        {upload.kind === "attached" && (
           <FileUpload
-            state="uploading"
-            filename={upload.filename}
-            progress={upload.progress}
-            meta={`${upload.progress}%`}
-            onCancel={() => setUpload({ kind: "empty" })}
+            state="success"
+            filename={upload.file.name}
+            meta={`${(upload.file.size / (1024 * 1024)).toFixed(1)} MB — ready to submit`}
           />
-        )}
-        {upload.kind === "success" && (
-          <FileUpload state="success" filename={upload.filename} meta={upload.sizeLabel} />
         )}
         {upload.kind === "error" && (
           <FileUpload
@@ -132,18 +129,9 @@ export default function OnboardingTransferPage() {
 
       <Button
         className="mt-8 w-full"
-        disabled={upload.kind !== "success"}
+        disabled={upload.kind !== "attached"}
         loading={submitting}
-        onClick={async () => {
-          // The free lessons open immediately — the student is never left
-          // with nothing to do while a human checks the receipt. A real
-          // payment_requests row is what lets an admin actually approve it.
-          setSubmitting(true);
-          setOnboardingAnswers({ paymentMethod: "transfer" });
-          await requestBankTransfer(plan.id);
-          await setOnboardingStep("done");
-          router.push("/onboarding/transfer/pending");
-        }}
+        onClick={submitTransfer}
       >
         I&rsquo;ve sent the transfer
       </Button>
