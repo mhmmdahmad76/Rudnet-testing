@@ -3,7 +3,6 @@ import { Resend } from "resend";
 
 const apiKey = process.env.RESEND_API_KEY;
 const resend = apiKey ? new Resend(apiKey) : null;
-const FROM = process.env.RESEND_FROM_EMAIL ?? "Lisaan <onboarding@resend.dev>";
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!resend) {
@@ -13,7 +12,10 @@ async function sendEmail(to: string, subject: string, html: string) {
     console.warn(html.replace(/<[^>]+>/g, " ").trim());
     return;
   }
-  const { error } = await resend.emails.send({ from: FROM, to, subject, html });
+  const from = process.env.RESEND_FROM_EMAIL;
+  if (!from) throw new Error("RESEND_API_KEY is set but RESEND_FROM_EMAIL is not.");
+
+  const { error } = await resend.emails.send({ from, to, subject, html });
   if (error) throw new Error(`Resend failed to send to ${to}: ${error.message}`);
 }
 
