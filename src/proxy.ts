@@ -9,7 +9,14 @@ import {
 } from "@/lib/session-cookies";
 
 const STUDENT_PROTECTED_PREFIXES = ["/devices", "/onboarding", "/dashboard", "/courses", "/placement-test"];
-const ADMIN_ACCESS_PATHS = ["/admin/sign-in", "/admin/2fa", "/admin/invite", "/admin/locked"];
+const ADMIN_ACCESS_PATHS = [
+  "/admin/sign-in",
+  "/admin/2fa",
+  "/admin/invite",
+  "/admin/locked",
+  "/admin/forgot-password",
+  "/admin/reset-password",
+];
 
 const secretKey = process.env.SESSION_SECRET;
 const encodedKey = secretKey ? new TextEncoder().encode(secretKey) : null;

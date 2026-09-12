@@ -9,7 +9,15 @@ async function sendEmail(to: string, subject: string, html: string) {
     // RESEND_API_KEY isn't set — this is the only place that's allowed to
     // still behave like a demo. Everything else in this file is real.
     console.warn(`[email] RESEND_API_KEY not set — not sent. To: ${to} — ${subject}`);
-    console.warn(html.replace(/<[^>]+>/g, " ").trim());
+    // Preserve link URLs before stripping tags — otherwise the one thing
+    // that matters in a verification/reset email (the actual link) is
+    // silently dropped from this fallback.
+    console.warn(
+      html
+        .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, "$2 ($1)")
+        .replace(/<[^>]+>/g, " ")
+        .trim(),
+    );
     return;
   }
   const from = process.env.RESEND_FROM_EMAIL;

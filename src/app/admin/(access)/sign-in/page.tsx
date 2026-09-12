@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,6 +75,12 @@ export default function AdminSignInPage() {
           Sign in
         </Button>
       </form>
+
+      <p className="t-body-sm text-center">
+        <Link href="/admin/forgot-password" className="text-fg-link hover:text-fg-link-hover">
+          Forgot your password?
+        </Link>
+      </p>
 
       <p className="t-body-xs text-center text-fg-tertiary">
         Every sign-in, price change, and entitlement grant is written to the audit log.

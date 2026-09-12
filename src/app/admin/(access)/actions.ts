@@ -1,14 +1,26 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { hashPassword, randomRecoveryCode, sha256Hex, verifyHash, verifyPassword } from "@/lib/crypto";
+import {
+  hashPassword,
+  randomRecoveryCode,
+  randomToken,
+  sha256Hex,
+  verifyHash,
+  verifyPassword,
+} from "@/lib/crypto";
 import { generateTotpSecret, totpQrDataUrl, verifyTotpCode } from "@/lib/totp";
+import { sendPasswordResetEmail } from "@/lib/email";
 import { verifyAdminSession } from "@/lib/dal";
 import { createAdminSession, destroyAdminSession, getAdminClaims, markAdminSessionVerified } from "@/lib/session";
 
 const LOCKOUT_SECONDS = 15 * 60;
 const MAX_ATTEMPTS = 3;
 const RECOVERY_CODE_COUNT = 8;
+
+function appUrl() {
+  return process.env.URL ?? process.env.DEPLOY_PRIME_URL ?? "http://localhost:3000";
+}
 
 interface AdminRow {
   id: number;
@@ -198,5 +210,49 @@ export async function getTwoFactorEnrollment() {
 
 export async function adminSignOut() {
   await destroyAdminSession();
+  return { ok: true as const };
+}
+
+export async function requestAdminPasswordReset(email: string) {
+  const normalized = email.trim().toLowerCase();
+  const rows = await db().sql`SELECT id FROM admin_users WHERE email = ${normalized}`;
+  const admin = rows[0] as { id: number } | undefined;
+
+  if (admin) {
+    const token = randomToken();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    await db().sql`
+      INSERT INTO password_reset_tokens (kind, subject_id, token_hash, expires_at)
+      VALUES ('admin', ${admin.id}, ${sha256Hex(token)}, ${expiresAt.toISOString()})
+    `;
+    await sendPasswordResetEmail(normalized, `${appUrl()}/admin/reset-password?token=${token}`);
+  }
+
+  // Always the same outcome — must not confirm which emails have admin accounts.
+  return { ok: true as const };
+}
+
+export async function resetAdminPassword(token: string, password: string) {
+  const rows = await db().sql`
+    SELECT id, subject_id, expires_at, used_at FROM password_reset_tokens
+    WHERE token_hash = ${sha256Hex(token)} AND kind = 'admin'
+  `;
+  const row = rows[0] as
+    | { id: number; subject_id: number; expires_at: string; used_at: string | null }
+    | undefined;
+
+  if (!row || row.used_at || new Date(row.expires_at) < new Date()) {
+    return { ok: false as const };
+  }
+
+  const passwordHash = hashPassword(password);
+  await db().sql`
+    UPDATE admin_users SET password_hash = ${passwordHash}, failed_login_attempts = 0, locked_until = NULL
+    WHERE id = ${row.subject_id}
+  `;
+  await db().sql`UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ${row.id}`;
+  // Every other session ends for real — 2FA stays intact, so signing back in still requires it.
+  await db().sql`DELETE FROM sessions WHERE kind = 'admin' AND subject_id = ${row.subject_id}`;
+
   return { ok: true as const };
 }
