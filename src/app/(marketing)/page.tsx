@@ -1,12 +1,13 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { Award, BookOpen, Target } from "lucide-react";
+import { Award, BookOpen, GraduationCap, MessageCircleCheck, Target, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { IconChip } from "@/components/lisaan/icon-chip";
 import { STUDENT_COOKIE } from "@/lib/session";
 import { DEMO_PLANS } from "@/lib/demo-data";
 import { LandingCourses } from "./landing-courses";
+import { HeroVideoLoop } from "./hero-video-loop";
 
 const HOW_IT_WORKS = [
   {
@@ -26,13 +27,19 @@ const HOW_IT_WORKS = [
   },
 ];
 
+const TRUST_STRIP = [
+  { icon: GraduationCap, label: "A1 → C2 curriculum" },
+  { icon: MessageCircleCheck, label: "Auto-graded quizzes" },
+  { icon: Users, label: "1:1 instructor feedback" },
+];
+
 export default async function LandingPage() {
   const cookieStore = await cookies();
   const signedIn = cookieStore.has(STUDENT_COOKIE);
 
   return (
     <div className="flex flex-col">
-      <section className="mx-auto flex w-full max-w-(--breakpoint-lg) flex-col items-center gap-6 px-5 py-20 text-center lg:px-16 lg:py-28">
+      <section className="mx-auto flex w-full max-w-(--breakpoint-lg) flex-col items-center gap-6 px-5 pt-16 pb-10 text-center lg:px-16 lg:pt-24">
         <h1 className="t-display-lg lg:t-display-2xl max-w-3xl text-fg-primary">
           Fluent English,{" "}
           <span className="relative inline-block">
@@ -57,10 +64,49 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="border-t border-stroke-default bg-bg-surface py-16">
-        <div className="mx-auto grid w-full max-w-(--breakpoint-lg) gap-8 px-5 sm:grid-cols-3 lg:px-16">
+      <section className="mx-auto w-full max-w-(--breakpoint-lg) px-5 lg:px-16">
+        <div className="relative aspect-video w-full overflow-hidden rounded-3xl bg-bg-inverse shadow-(--elev-02)">
+          <HeroVideoLoop />
+        </div>
+      </section>
+
+      <section className="border-t border-stroke-default bg-bg-surface py-10">
+        <div className="mx-auto flex w-full max-w-(--breakpoint-lg) flex-col items-center gap-5 px-5 lg:px-16">
+          <p className="t-overline text-fg-tertiary">Built for real fluency, not busywork</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
+            {TRUST_STRIP.map((item) => (
+              <div key={item.label} className="flex items-center gap-2">
+                <item.icon size={18} className="text-fg-brand" aria-hidden />
+                <span className="t-label-md text-fg-secondary">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20">
+        <div className="mx-auto flex w-full max-w-(--breakpoint-lg) flex-col items-center gap-4 px-5 text-center lg:px-16">
+          <h2 className="t-display-lg lg:t-display-xl max-w-2xl text-fg-primary uppercase">
+            You watched the videos.{" "}
+            <span className="relative inline-block">
+              <span
+                className="absolute inset-x-0 bottom-1 z-0 h-2.5 rounded-full bg-bg-accent"
+                aria-hidden
+              />
+              <span className="relative z-10">Now speak.</span>
+            </span>
+          </h2>
+          <p className="t-body-lg max-w-xl text-fg-secondary">
+            Lisaan pairs every lesson with graded practice and a real instructor, so progress
+            shows up in what you can say — not just what you&apos;ve watched.
+          </p>
+        </div>
+        <div className="mx-auto mt-12 grid w-full max-w-(--breakpoint-lg) gap-8 px-5 sm:grid-cols-3 lg:px-16">
           {HOW_IT_WORKS.map((item) => (
-            <div key={item.title} className="flex flex-col items-start gap-3">
+            <div
+              key={item.title}
+              className="flex flex-col items-start gap-3 rounded-2xl border border-stroke-default bg-bg-surface p-6"
+            >
               <IconChip icon={item.icon} tone="brand" />
               <p className="t-h5 text-fg-primary">{item.title}</p>
               <p className="t-body-sm text-fg-tertiary">{item.body}</p>
@@ -69,7 +115,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section id="courses" className="scroll-mt-20 py-20">
+      <section id="courses" className="scroll-mt-20 border-t border-stroke-default bg-bg-surface py-20">
         <div className="mx-auto flex w-full max-w-(--breakpoint-lg) flex-col gap-8 px-5 lg:px-16">
           <div className="flex flex-col gap-2">
             <p className="t-overline text-fg-brand">Courses</p>
@@ -79,7 +125,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section id="pricing" className="scroll-mt-20 border-t border-stroke-default bg-bg-surface py-20">
+      <section id="pricing" className="scroll-mt-20 py-20">
         <div className="mx-auto flex w-full max-w-(--breakpoint-lg) flex-col gap-8 px-5 lg:px-16">
           <div className="flex flex-col gap-2 text-center">
             <p className="t-overline text-fg-brand">Pricing</p>
@@ -89,7 +135,7 @@ export default async function LandingPage() {
             {DEMO_PLANS.map((plan) => (
               <div
                 key={plan.id}
-                className="flex flex-col gap-4 rounded-2xl border border-stroke-default bg-bg-canvas p-6"
+                className="flex flex-col gap-4 rounded-2xl border border-stroke-default bg-bg-surface p-6"
               >
                 <div className="flex items-center justify-between">
                   <p className="t-h4 text-fg-primary">{plan.label}</p>
@@ -116,7 +162,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section id="blog" className="scroll-mt-20 py-20">
+      <section id="blog" className="scroll-mt-20 border-t border-stroke-default bg-bg-surface py-20">
         <div className="mx-auto flex w-full max-w-(--breakpoint-lg) flex-col gap-8 px-5 lg:px-16">
           <div className="flex flex-col gap-2">
             <p className="t-overline text-fg-brand">From the blog</p>
@@ -128,7 +174,7 @@ export default async function LandingPage() {
               "The five phrases that unlock most business calls",
               "How to actually remember new vocabulary",
             ].map((title) => (
-              <div key={title} className="rounded-xl border border-stroke-default bg-bg-surface p-5">
+              <div key={title} className="rounded-xl border border-stroke-default bg-bg-canvas p-5">
                 <p className="t-h6 text-fg-primary">{title}</p>
               </div>
             ))}
